@@ -11,7 +11,7 @@ require('freedesktop')
 -- require("debian.menu")
 
 freedesktop.utils.terminal   = terminal -- defined in rc.lua, otherwise define it here (default: "xterm")
-freedesktop.utils.icon_theme = 'gnome'  -- choose your favourite from /usr/share/icons/ (default: nil)
+freedesktop.utils.icon_theme = 'oxygen'  -- choose your favourite from /usr/share/icons/ (default: nil)
 
 menu_items = freedesktop.menu.new()
 

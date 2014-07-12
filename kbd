@@ -1,0 +1,3 @@
+#!/bin/sh
+xkb-switch
+exec xkb-switch -W
