@@ -6,6 +6,7 @@
 --]]
 
 -- {{{ Required libraries
+local APW = require("apw/widget")
 local gears     = require("gears")
 local awful     = require("awful")
 awful.rules     = require("awful.rules")
@@ -54,7 +55,8 @@ run_once("nm-applet")
 run_once("urxvtd")
 run_once("unclutter")
 -- run_once("psi-plus")
-run_once("screencloud")
+-- run_once("screencloud")
+run_once("shutter")
 run_once("mpd")
 run_once("mpdscribble")
 run_once("kbdd")
@@ -203,7 +205,7 @@ batwidget = wibox.widget.background(lain.widgets.bat({
 baticonbg = wibox.widget.background(baticon, "#313131")
 
 -- ALSA volume
-volicon = wibox.widget.imagebox(beautiful.widget_vol)
+--[[volicon = wibox.widget.imagebox(beautiful.widget_vol)
 volumewidget = lain.widgets.alsa({
     settings = function()
         if volume_now.status == "off" then
@@ -221,6 +223,7 @@ volumewidget = lain.widgets.alsa({
 })
 voliconbg = wibox.widget.background(volicon, "#313131")
 volumewidgetbg = wibox.widget.background(volumewidget, "#313131")
+]]--
 
 -- Yawn widget
 yawn = lain.widgets.yawn(2123260, { })
@@ -374,9 +377,9 @@ for s = 1, screen.count() do
     local right_layout = wibox.layout.fixed.horizontal()
     if s == 1 then right_layout:add(wibox.widget.systray()) end
     right_layout:add(spr)
-    right_layout:add(arrl)
-    right_layout:add(volicon)
-    right_layout:add(volumewidget)
+    --right_layout:add(arrl)
+    --right_layout:add(volicon)
+    --right_layout:add(volumewidget)
     right_layout:add(arrl_ld)
     right_layout:add(mpdicon)
     right_layout:add(mpdwidgetbg)
@@ -398,6 +401,7 @@ for s = 1, screen.count() do
     right_layout:add(arrl_ld)
     right_layout:add(kbdwidget)
     right_layout:add(mylayoutbox[s])
+    right_layout:add(APW)
 
     -- Now bring it all together (with the tasklist in the middle)
     local layout = wibox.layout.align.horizontal()
@@ -440,13 +444,16 @@ globalkeys = awful.util.table.join(
     awful.key({ altkey }, "Left", function () lain.util.tag_view_nonempty(-1) end),
     awful.key({ altkey }, "Right", function () lain.util.tag_view_nonempty(1) end),
 
-    -- Default client focus
-    awful.key({ altkey }, "k",
+    -- Default client nawigation
+    awful.key({ altkey }, "k", --forward
         function ()
+            local tag = awful.tag.selected()
+            for i=1, #tag:clients() do
+              tag:clients()[i].minimized = false end
             awful.client.focus.byidx( 1)
             if client.focus then client.focus:raise() end
         end),
-    awful.key({ altkey }, "j",
+    awful.key({ altkey }, "j", --backward
         function ()
             awful.client.focus.byidx(-1)
             if client.focus then client.focus:raise() end
@@ -533,7 +540,7 @@ globalkeys = awful.util.table.join(
         awful.util.spawn("xbacklight -inc 10") end),
 
     -- ALSA volume control
-    awful.key({ }, "XF86AudioRaiseVolume",
+    --[[ awful.key({ }, "XF86AudioRaiseVolume",
         function ()
             awful.util.spawn("amixer -q set Master 5%+")
             volumewidget.update()
@@ -553,7 +560,13 @@ globalkeys = awful.util.table.join(
             awful.util.spawn("amixer -q set Master playback 100%")
             volumewidget.update()
         end),
-    
+    ]]--
+
+    --Pulse audio volume control
+    awful.key({ }, "XF86AudioRaiseVolume",  APW.Up),
+    awful.key({ }, "XF86AudioLowerVolume",  APW.Down),
+    awful.key({ }, "XF86AudioMute",         APW.ToggleMute),
+
     -- MPD control
     awful.key({ altkey, "Control" }, "Up",
         function ()
