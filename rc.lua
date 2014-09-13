@@ -17,7 +17,6 @@ local naughty   = require("naughty")
 local drop      = require("scratchdrop")
 local lain      = require("lain")
 local revelation= require("revelation")
-local redshift = require("redshift")
 -- }}}
 
 -- {{{ Error handling
@@ -56,7 +55,7 @@ run_once("urxvtd")
 run_once("unclutter")
 -- run_once("psi-plus")
 -- run_once("screencloud")
-run_once("shutter")
+-- run_once("shutter")
 run_once("mpd")
 run_once("mpdscribble")
 run_once("kbdd")
@@ -64,14 +63,11 @@ run_once("conky")
 -- }}}
 
 -- {{{ Variable definitions
--- Redshift 
-redshift.options = "-t 5500:4500"
-
 -- localization
 os.setlocale(os.getenv("LANG"))
 
 -- beautiful init
-beautiful.init(os.getenv("HOME") .. "/.config/awesome/themes/powerarrow-darker/theme.lua")
+beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme/theme.lua")
 
 -- revelation init
 revelation.init()
@@ -204,26 +200,6 @@ batwidget = wibox.widget.background(lain.widgets.bat({
 }), "#313131")
 baticonbg = wibox.widget.background(baticon, "#313131")
 
--- ALSA volume
---[[volicon = wibox.widget.imagebox(beautiful.widget_vol)
-volumewidget = lain.widgets.alsa({
-    settings = function()
-        if volume_now.status == "off" then
-            volicon:set_image(beautiful.widget_vol_mute)
-        elseif tonumber(volume_now.level) == 0 then
-            volicon:set_image(beautiful.widget_vol_no)
-        elseif tonumber(volume_now.level) <= 50 then
-            volicon:set_image(beautiful.widget_vol_low)
-        else
-            volicon:set_image(beautiful.widget_vol)
-        end
-
-        widget:set_text(" " .. volume_now.level .. "% ")
-    end
-})
-voliconbg = wibox.widget.background(volicon, "#313131")
-volumewidgetbg = wibox.widget.background(volumewidget, "#313131")
-]]--
 
 -- Yawn widget
 yawn = lain.widgets.yawn(2123260, { })
@@ -426,14 +402,11 @@ root.buttons(awful.util.table.join(
 ))
 -- }}}
 
--- {{{ Key bindings
+-- {{{ Key bindings(Hotkeys)
 globalkeys = awful.util.table.join(
     -- Take a screenshot
     -- https://github.com/copycat-killer/dots/blob/master/bin/screenshot
     awful.key({ altkey }, "p", function() os.execute("screenshot") end),
-    
-    -- Redshift keys
-    awful.key({modkey}, "d", redshift.toggle),
 
     -- Tag browsing
     awful.key({ modkey }, "Left",   awful.tag.viewprev       ),
@@ -539,29 +512,6 @@ globalkeys = awful.util.table.join(
     awful.key({ }, "XF86MonBrightnessUp", function ()
         awful.util.spawn("xbacklight -inc 10") end),
 
-    -- ALSA volume control
-    --[[ awful.key({ }, "XF86AudioRaiseVolume",
-        function ()
-            awful.util.spawn("amixer -q set Master 5%+")
-            volumewidget.update()
-        end),
-    awful.key({ }, "XF86AudioLowerVolume",
-        function ()
-            awful.util.spawn("amixer -q set Master 5%-")
-            volumewidget.update()
-        end),
-    awful.key({ }, "XF86AudioMute",
-        function ()
-            awful.util.spawn("amixer -q set Master playback toggle")
-            volumewidget.update()
-        end),
-    awful.key({ "Control" }, "XF86AudioMute",
-        function ()
-            awful.util.spawn("amixer -q set Master playback 100%")
-            volumewidget.update()
-        end),
-    ]]--
-
     --Pulse audio volume control
     awful.key({ }, "XF86AudioRaiseVolume",  APW.Up),
     awful.key({ }, "XF86AudioLowerVolume",  APW.Down),
@@ -591,6 +541,9 @@ globalkeys = awful.util.table.join(
 
     -- Revelation keys
     awful.key({ modkey }, "e", revelation), -- all apps
+    awful.key({ altkey }, "e", function()
+      revelation( {curr_tag_only=true} )
+      end),
 
     -- Copy to clipboard
     awful.key({ modkey }, "c", function () os.execute("xsel -p -o | xsel -i -b") end),
