@@ -1,12 +1,5 @@
---[[
-                                             
-     Powerarrow Darker Awesome WM config 2.0 
-     github.com/copycat-killer               
-                                             
---]]
-
 -- {{{ Required libraries
-local APW = require("apw/widget")
+-- local APW = require("apw/widget")
 local gears     = require("gears")
 local awful     = require("awful")
 awful.rules     = require("awful.rules")
@@ -53,9 +46,7 @@ end
 run_once("nm-applet")
 run_once("urxvtd")
 run_once("unclutter")
--- run_once("psi-plus")
--- run_once("screencloud")
--- run_once("shutter")
+run_once("pidgin")
 run_once("mpd")
 run_once("mpdscribble")
 run_once("kbdd")
@@ -81,7 +72,7 @@ editor     = os.getenv("EDITOR") or "nano" or "vi"
 editor_cmd = terminal .. " -e " .. editor
 
 -- user defined
-browser    = "google-chrome-unstable"
+browser    = "firefox"
 browser2   = "chromium"
 gui_editor = "gvim"
 graphics   = "gimp"
@@ -101,11 +92,13 @@ local layouts = {
 -- {{{ Tags
 tags = {
    names = { "web", "IM", "dev", "term", "media", "other"},
-   layout = { layouts[1], layouts[1], layouts[2], layouts[2], layouts[1], layouts[1] }
+   layout = { layouts[4], layouts[2], layouts[2], layouts[2], layouts[1], layouts[1] }
 }
 
-for s = 1, screen.count() do
-   tags[s] = awful.tag(tags.names, s, tags.layout)
+for s = 1, screen.count() do 
+  tags[s] = awful.tag(tags.names, s, tags.layout)
+  awful.tag.setncol(2, tags[s][2])                         -- эта и следующая строчка нужна для Pidgin
+  awful.tag.setproperty(tags[s][2], "mwfact", 0.20)        -- здесь мы устанавливаем ширину списка контактов в 20% от ширины экрана
 end
 -- }}}
 
@@ -201,11 +194,30 @@ batwidget = wibox.widget.background(lain.widgets.bat({
 baticonbg = wibox.widget.background(baticon, "#313131")
 
 
+-- ALSA volume
+volicon = wibox.widget.imagebox(beautiful.widget_vol)
+voliconbg = wibox.widget.background(volicon,"#313131")
+volumewidget = lain.widgets.alsa({
+  settings = function()
+    if volume_now.status == "off" then
+      volicon:set_image(beautiful.widget_vol_mute)
+    elseif tonumber(volume_now.level) == 0 then
+      volicon:set_image(beautiful.widget_vol_no)
+    elseif tonumber(volume_now.level) <= 50 then
+      volicon:set_image(beautiful.widget_vol_low)
+    else
+      volicon:set_image(beautiful.widget_vol)
+    end
+    widget:set_text(" " .. volume_now.level .. "% ")
+end
+})
+volumewidgetbg = wibox.widget.background(volumewidget ,"#313131")
+
 -- Yawn widget
 yawn = lain.widgets.yawn(2123260, { })
 
 -- Keyboard map indicator and changer
-    kbdtext = wibox.widget.textbox()
+    kbdtext = wibox.widget.textbox(" en ")
     kbdwidget = wibox.widget.background(kbdtext, "#313131")
     kbdstrings = {[0] = " en ", 
                   [1] = " ru "}
@@ -376,8 +388,10 @@ for s = 1, screen.count() do
     right_layout:add(spr)
     right_layout:add(arrl_ld)
     right_layout:add(kbdwidget)
+    right_layout:add(voliconbg)
+    right_layout:add(volumewidgetbg)
     right_layout:add(mylayoutbox[s])
-    right_layout:add(APW)
+    --right_layout:add(APW)
 
     -- Now bring it all together (with the tasklist in the middle)
     local layout = wibox.layout.align.horizontal()
@@ -513,9 +527,31 @@ globalkeys = awful.util.table.join(
         awful.util.spawn("xbacklight -inc 10") end),
 
     --Pulse audio volume control
-    awful.key({ }, "XF86AudioRaiseVolume",  APW.Up),
-    awful.key({ }, "XF86AudioLowerVolume",  APW.Down),
-    awful.key({ }, "XF86AudioMute",         APW.ToggleMute),
+    --awful.key({ }, "XF86AudioRaiseVolume",  APW.Up),
+    --awful.key({ }, "XF86AudioLowerVolume",  APW.Down),
+    --awful.key({ }, "XF86AudioMute",         APW.ToggleMute),
+
+    -- ALSA volume control
+    awful.key({ }, "XF86AudioRaiseVolume",
+      function ()
+        awful.util.spawn("amixer -q set Master 1%+")
+        volumewidget.update()
+    end),
+    awful.key({ }, "XF86AudioLowerVolume",
+      function ()
+        awful.util.spawn("amixer -q set Master 1%-")
+        volumewidget.update()
+      end),
+    awful.key({ }, "XF86AudioMute",
+      function ()
+        awful.util.spawn("amixer -q set Master playback toggle")
+        volumewidget.update()
+      end),
+    awful.key({ "Control" }, "XF86AudioMute",
+      function ()
+        awful.util.spawn("amixer -q set Master playback 100%")
+        volumewidget.update()
+      end),
 
     -- MPD control
     awful.key({ altkey, "Control" }, "Up",
@@ -671,6 +707,11 @@ awful.rules.rules = {
     { rule = { class = "Gimp", role = "gimp-image-window" },
           properties = { maximized_horizontal = true,
                          maximized_vertical = true } },
+    
+    { rule = { class = "Pidgin", role = "buddy_list"},
+         properties = { tag = tags[1][2] } },
+    { rule = { class = "Pidgin", role = "conversation"},
+         properties = { tag = tags[1][2]}, callback = awful.client.setslave },
 }
 -- }}}
 
