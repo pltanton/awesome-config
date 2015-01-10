@@ -7,9 +7,9 @@
 --   * http://sam.zoy.org/wtfpl/COPYING
 -------------------------------------------------------------------
 -- To use this module add:
---   local scratchdrop = require("scratchdrop")
+--   local scratch = require("scratch")
 -- to the top of your rc.lua, and call it from a keybinding:
---   scratchdrop(prog, vert, horiz, width, height, sticky, screen)
+--   scratch.drop(prog, vert, horiz, width, height, sticky, screen)
 --
 -- Parameters:
 --   prog   - Program to run; "urxvt", "gmrun", "thunderbird"
@@ -34,7 +34,8 @@ local capi = {
 }
 
 -- Scratchdrop: drop-down applications manager for the awesome window manager
-local scratchdrop = {} -- module scratch.drop
+local drop = {} -- module scratch.drop
+
 
 local dropdown = {}
 
@@ -75,16 +76,16 @@ function toggle(prog, vert, horiz, width, height, sticky, screen)
             -- Client geometry and placement
             local screengeom = capi.screen[screen].workarea
 
-            if width  <= 1 then width  = (screengeom.width  * width) - 3 end
+            if width  <= 1 then width  = screengeom.width  * width  end
             if height <= 1 then height = screengeom.height * height end
 
             if     horiz == "left"  then x = screengeom.x
             elseif horiz == "right" then x = screengeom.width - width
-            else   x =  screengeom.x+(screengeom.width-width)/2 - 1 end
+            else   x =  screengeom.x+(screengeom.width-width)/2 end
 
             if     vert == "bottom" then y = screengeom.height + screengeom.y - height
             elseif vert == "center" then y = screengeom.y+(screengeom.height-height)/2
-            else   y =  screengeom.y end
+            else   y =  screengeom.y - screengeom.y end
 
             -- Client properties
             c:geometry({ x = x, y = y, width = width, height = height })
@@ -101,7 +102,7 @@ function toggle(prog, vert, horiz, width, height, sticky, screen)
 
         -- Add manage signal and spawn the program
         attach_signal("manage", spawnw)
-        awful.util.spawn_with_shell(prog, false) -- original without '_with_shell'
+        awful.util.spawn(prog, false)
     else
         -- Get a running client
         c = dropdown[prog][screen]
@@ -130,4 +131,4 @@ function toggle(prog, vert, horiz, width, height, sticky, screen)
     end
 end
 
-return setmetatable(scratchdrop, { __call = function(_, ...) return toggle(...) end })
+return setmetatable(drop, { __call = function(_, ...) return toggle(...) end })

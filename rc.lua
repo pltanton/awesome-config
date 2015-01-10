@@ -1,5 +1,4 @@
 -- {{{ Required libraries
--- local APW = require("apw/widget")
 local gears     = require("gears")
 local awful     = require("awful")
 awful.rules     = require("awful.rules")
@@ -7,7 +6,7 @@ require("awful.autofocus")
 local wibox     = require("wibox")
 local beautiful = require("beautiful")
 local naughty   = require("naughty")
-local drop      = require("scratchdrop")
+local scratch   = require("scratch")
 local lain      = require("lain")
 local revelation= require("revelation")
 -- }}}
@@ -51,6 +50,9 @@ run_once("mpd")
 run_once("mpdscribble")
 run_once("kbdd")
 run_once("conky")
+run_once("udiskie --tray")
+run_once("clipit")
+
 -- }}}
 
 -- {{{ Variable definitions
@@ -72,13 +74,8 @@ editor     = os.getenv("EDITOR") or "nano" or "vi"
 editor_cmd = terminal .. " -e " .. editor
 
 -- user defined
-browser    = "firefox"
-browser2   = "chromium"
+browser    = "chromium"
 gui_editor = "gvim"
-graphics   = "gimp"
-mail       = terminal .. " -e mutt "
-iptraf     = terminal .. " -g 180x54-20+34 -e sudo iptraf-ng -i all "
-musicplr   = terminal .. " -g 130x34-320+16 -e ncmpcpp "
 
 local layouts = {
     awful.layout.suit.floating,
@@ -91,14 +88,24 @@ local layouts = {
 
 -- {{{ Tags
 tags = {
-   names = { "web", "IM", "dev", "term", "media", "other"},
-   layout = { layouts[4], layouts[2], layouts[2], layouts[2], layouts[1], layouts[1] }
+   names = { "web", "im", "dev", "term", "media", "other"},
+   layout = { layouts[2], layouts[2], layouts[2], layouts[2], layouts[1], layouts[1] }
 }
 
 for s = 1, screen.count() do 
   tags[s] = awful.tag(tags.names, s, tags.layout)
-  awful.tag.setncol(2, tags[s][2])                         -- эта и следующая строчка нужна для Pidgin
-  awful.tag.setproperty(tags[s][2], "mwfact", 0.20)        -- здесь мы устанавливаем ширину списка контактов в 20% от ширины экрана
+  awful.tag.setncol(2, tags[s][2])                         
+  awful.tag.setproperty(tags[s][2], "mwfact", 0.20)       
+end
+-- }}}
+
+-- {{{ Disable DPMS
+local function dpms(c)
+    if c then
+        awful.util.spawn_with_shell("xset s off && xset -dpms &")
+    else
+        awful.util.spawn_with_shell("xset s on && xset +dpms &")
+    end
 end
 -- }}}
 
@@ -111,7 +118,140 @@ end
 -- }}}
 
 -- {{{ Menu
-require("freedesktop/freedesktop")
+mymainmenu = awful.menu.new({ items = require("menugen").build_menu(),
+                              theme = { height = 16, width = 130 }})
+-- }}}
+
+-- {{{ Display cycling
+-- Get active outputs
+local function outputs()
+   local outputs = {}
+   local xrandr = io.popen("xrandr -q")
+   if xrandr then
+      for line in xrandr:lines() do
+	 output = line:match("^([%w-]+) connected ")
+	 if output then
+	    outputs[#outputs + 1] = output
+	 end
+      end
+      xrandr:close()
+   end
+
+   return outputs
+end
+
+local function arrange(out)
+   -- We need to enumerate all the way to combinate output. We assume
+   -- we want only an horizontal layout.
+   local choices  = {}
+   local previous = { {} }
+   for i = 1, #out do
+      -- Find all permutation of length `i`: we take the permutation
+      -- of length `i-1` and for each of them, we create new
+      -- permutations by adding each output at the end of it if it is
+      -- not already present.
+      local new = {}
+      for _, p in pairs(previous) do
+	 for _, o in pairs(out) do
+	    if not awful.util.table.hasitem(p, o) then
+	       new[#new + 1] = awful.util.table.join(p, {o})
+	    end
+	 end
+      end
+      choices = awful.util.table.join(choices, new)
+      previous = new
+   end
+
+   return choices
+end
+
+-- Build available choices
+local function menu()
+   local menu = {}
+   local out = outputs()
+   local choices = arrange(out)
+
+   for _, choice in pairs(choices) do
+      local cmd = "xrandr"
+      -- Enabled outputs
+      for i, o in pairs(choice) do
+	 cmd = cmd .. " --output " .. o .. " --auto"
+	 if i > 1 then
+	    cmd = cmd .. " --right-of " .. choice[i-1]
+	 end
+      end
+      -- Disabled outputs
+      for _, o in pairs(out) do
+	 if not awful.util.table.hasitem(choice, o) then
+	    cmd = cmd .. " --output " .. o .. " --off"
+	 end
+      end
+
+      local label = ""
+      if #choice == 1 then
+	 label = 'Only <span weight="bold">' .. choice[1] .. '</span>'
+      else
+	 for i, o in pairs(choice) do
+	    if i > 1 then label = label .. " + " end
+	    label = label .. '<span weight="bold">' .. o .. '</span>'
+	 end
+      end
+
+      menu[#menu + 1] = { label,
+			  cmd,
+                          "/usr/share/icons/Tango/32x32/devices/display.png"}
+   end
+
+   return menu
+end
+
+-- Display xrandr notifications from choices
+local state = { iterator = nil,
+		timer = nil,
+		cid = nil }
+local function xrandr()
+   -- Stop any previous timer
+   if state.timer then
+      state.timer:stop()
+      state.timer = nil
+   end
+
+   -- Build the list of choices
+   if not state.iterator then
+      state.iterator = awful.util.table.iterate(menu(),
+					function() return true end)
+   end
+
+   -- Select one and display the appropriate notification
+   local next  = state.iterator()
+   local label, action, icon
+   if not next then
+      label, icon = "Keep the current configuration", "/usr/share/icons/Tango/32x32/devices/display.png"
+      state.iterator = nil
+   else
+      label, action, icon = unpack(next)
+   end
+   state.cid = naughty.notify({ text = label,
+				icon = icon,
+				timeout = 4,
+				screen = mouse.screen, -- Important, not all screens may be visible
+				font = "Free Sans 18",
+				replaces_id = state.cid }).id
+
+   -- Setup the timer
+   state.timer = timer { timeout = 4 }
+   state.timer:connect_signal("timeout",
+			  function()
+			     state.timer:stop()
+			     state.timer = nil
+			     state.iterator = nil
+			     if action then
+				awful.util.spawn(action, false)
+			     end
+			  end)
+   state.timer:start()
+end
+
 -- }}}
 
 -- {{{ Wibox
@@ -211,67 +351,32 @@ volumewidget = lain.widgets.alsa({
     widget:set_text(" " .. volume_now.level .. "% ")
 end
 })
+    -- Mute on click
+volumewidget:buttons(awful.util.table.join(awful.button({}, 1, function()
+            awful.util.spawn("amixer -q set Master playback toggle")
+            volumewidget.update()
+        end)))
 volumewidgetbg = wibox.widget.background(volumewidget ,"#313131")
 
--- Yawn widget
-yawn = lain.widgets.yawn(2123260, { })
-
 -- Keyboard map indicator and changer
-    kbdtext = wibox.widget.textbox(" en ")
-    kbdwidget = wibox.widget.background(kbdtext, "#313131")
-    kbdstrings = {[0] = " en ", 
-                  [1] = " ru "}
-
-    dbus.request_name("session", "ru.gentoo.kbdd")
-    dbus.add_match("session", "interface='ru.gentoo.kbdd',member='layoutChanged'")
-    dbus.connect_signal("ru.gentoo.kbdd", function(...)
-      local data = {...}
-      local layout = data[2]
-      kbdtext:set_markup(kbdstrings[layout])
-      end
-    )
-
--- Conky HUD
-function get_conky()
-    local clients = client.get()
-    local conky = nil
-    local i = 1
-    while clients[i]
-    do
-        if clients[i].class == "conky"
-        then
-            conky = clients[i]
-        end
-        i = i + 1
+handle = io.popen("xkb-switch")
+kbdtext = wibox.widget.textbox(' '..handle:read()..' ')
+handle:close()
+    
+kbdwidget = wibox.widget.background(kbdtext, "#313131")
+kbdstrings = {[0] = " en ", [1] = " ru "}
+kbdwidget:buttons(awful.util.table.join(awful.button({}, 1, function()
+                     os.execute('xkb-switch -n')
+                  end))) 
+              
+dbus.request_name("session", "ru.gentoo.kbdd")
+dbus.add_match("session", "interface='ru.gentoo.kbdd',member='layoutChanged'")
+dbus.connect_signal("ru.gentoo.kbdd", function(...)
+        local data = {...}
+        local layout = data[2]
+        kbdtext:set_markup(kbdstrings[layout])
     end
-    return conky
-end
-function raise_conky()
-    local conky = get_conky()
-    if conky
-    then
-        conky.ontop = true
-    end
-end
-function lower_conky()
-    local conky = get_conky()
-    if conky
-    then
-        conky.ontop = false
-    end
-end
-function toggle_conky()
-    local conky = get_conky()
-    if conky
-    then
-        if conky.ontop
-        then
-            conky.ontop = false
-        else
-            conky.ontop = true
-        end
-    end
-end
+)
 
 -- Separators
 spr = wibox.widget.textbox(' ')
@@ -364,6 +469,8 @@ for s = 1, screen.count() do
     -- Widgets that are aligned to the upper right
     local right_layout = wibox.layout.fixed.horizontal()
     if s == 1 then right_layout:add(wibox.widget.systray()) end
+    
+
     right_layout:add(spr)
     --right_layout:add(arrl)
     --right_layout:add(volicon)
@@ -418,9 +525,8 @@ root.buttons(awful.util.table.join(
 
 -- {{{ Key bindings(Hotkeys)
 globalkeys = awful.util.table.join(
-    -- Take a screenshot
-    -- https://github.com/copycat-killer/dots/blob/master/bin/screenshot
-    awful.key({ altkey }, "p", function() os.execute("screenshot") end),
+    -- Display cycling
+    awful.key({ modkey }, "F9", xrandr),
 
     -- Tag browsing
     awful.key({ modkey }, "Left",   awful.tag.viewprev       ),
@@ -509,27 +615,16 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey, "Shift"   }, "q",      awesome.quit),
 
     -- Dropdown terminal
-    awful.key({ modkey,	          }, "z",      function () drop(terminal) end),
-
-    -- Widgets popups
-    awful.key({ altkey,           }, "c",      function () lain.widgets.calendar:show(7) end),
-
-    -- Conky
-    awful.key({}, "F10", raise_conky, lower_conky),
+    awful.key({ modkey,	          }, "z",      function () scratch.drop(terminal) end),
 
     -- Screensaver
-    awful.key({ modkey }, "F12", function () awful.util.spawn("xscreensaver-command -lock") end),
+    awful.key({ modkey }, "F12", function () awful.util.spawn("lock") end),
 
     -- Brightness
     awful.key({ }, "XF86MonBrightnessDown", function ()
         awful.util.spawn("xbacklight -dec 10") end),
     awful.key({ }, "XF86MonBrightnessUp", function ()
         awful.util.spawn("xbacklight -inc 10") end),
-
-    --Pulse audio volume control
-    --awful.key({ }, "XF86AudioRaiseVolume",  APW.Up),
-    --awful.key({ }, "XF86AudioLowerVolume",  APW.Down),
-    --awful.key({ }, "XF86AudioMute",         APW.ToggleMute),
 
     -- ALSA volume control
     awful.key({ }, "XF86AudioRaiseVolume",
@@ -602,8 +697,17 @@ globalkeys = awful.util.table.join(
 )
 
 clientkeys = awful.util.table.join(
-    awful.key({ modkey,           }, "f",      function (c) c.fullscreen = not c.fullscreen  end),
-    awful.key({ modkey, "Shift"   }, "c",      function (c) c:kill()                         end),
+    awful.key({ modkey,           }, "f",       function (c) 
+                                                    c.fullscreen = not c.fullscreen  
+                                                    dpms(c.fullscreen)
+                                                end),
+    awful.key({ modkey, "Shift"   }, "c",       function (c) 
+                                                    if c.fullscreen then
+                                                        c.fullscreen = not c.fullscreen
+                                                        dpms(c.fullscreen)
+                                                    end
+                                                    c:kill()                         
+                                                end),
     awful.key({ modkey, "Control" }, "space",  awful.client.floating.toggle                     ),
     awful.key({ modkey, "Control" }, "Return", function (c) c:swap(awful.client.getmaster()) end),
     awful.key({ modkey,           }, "o",      awful.client.movetoscreen                        ),
@@ -707,11 +811,21 @@ awful.rules.rules = {
     { rule = { class = "Gimp", role = "gimp-image-window" },
           properties = { maximized_horizontal = true,
                          maximized_vertical = true } },
+
+    { rule = { class = "Shutter"},
+            properties = { floating = true } },
     
     { rule = { class = "Pidgin", role = "buddy_list"},
          properties = { tag = tags[1][2] } },
     { rule = { class = "Pidgin", role = "conversation"},
-         properties = { tag = tags[1][2]}, callback = awful.client.setslave },
+         properties = { tag = tags[1][2]}, callback = awful.client.setslave },     
+         
+    { rule = { class = "Plugin-container" }, 
+        properties = { focus = yes,
+                       floating = true, 
+                       fullscreen = true, 
+                       border_width = 0,
+                       border_color = beautiful.border_normal } },     
 }
 -- }}}
 
