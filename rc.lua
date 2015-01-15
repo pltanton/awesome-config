@@ -4,11 +4,15 @@ local awful     = require("awful")
 awful.rules     = require("awful.rules")
 require("awful.autofocus")
 local wibox     = require("wibox")
+
 local beautiful = require("beautiful")
+beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme/theme.lua")
+
 local naughty   = require("naughty")
 local scratch   = require("scratch")
 local lain      = require("lain")
 local revelation= require("revelation")
+local APW = require("apw/widget")
 -- }}}
 
 -- {{{ Error handling
@@ -58,9 +62,6 @@ run_once("clipit")
 -- {{{ Variable definitions
 -- localization
 os.setlocale(os.getenv("LANG"))
-
--- beautiful init
-beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme/theme.lua")
 
 -- revelation init
 revelation.init()
@@ -317,7 +318,9 @@ tempwidget = lain.widgets.temp({
 baticon = wibox.widget.imagebox(beautiful.widget_battery)
 batwidget = wibox.widget.background(lain.widgets.bat({
     settings = function()
-        if bat_now.perc == "N/A" then
+        if bat_now.status == "Charging" then
+            baticon:set_image(beautiful.widget_ac)
+        elseif bat_now.perc == "N/A" then
             widget:set_markup(" AC ")
             baticon:set_image(beautiful.widget_ac)
             return
@@ -337,26 +340,26 @@ baticonbg = wibox.widget.background(baticon, "#313131")
 -- ALSA volume
 volicon = wibox.widget.imagebox(beautiful.widget_vol)
 voliconbg = wibox.widget.background(volicon,"#313131")
-volumewidget = lain.widgets.alsa({
-  settings = function()
-    if volume_now.status == "off" then
-      volicon:set_image(beautiful.widget_vol_mute)
-    elseif tonumber(volume_now.level) == 0 then
-      volicon:set_image(beautiful.widget_vol_no)
-    elseif tonumber(volume_now.level) <= 50 then
-      volicon:set_image(beautiful.widget_vol_low)
-    else
-      volicon:set_image(beautiful.widget_vol)
-    end
-    widget:set_text(" " .. volume_now.level .. "% ")
-end
-})
+--volumewidget = lain.widgets.alsa({
+--  settings = function()
+--    if volume_now.status == "off" then
+--      volicon:set_image(beautiful.widget_vol_mute)
+--    elseif tonumber(volume_now.level) == 0 then
+--      volicon:set_image(beautiful.widget_vol_no)
+--    elseif tonumber(volume_now.level) <= 50 then
+--      volicon:set_image(beautiful.widget_vol_low)
+--    else
+--      volicon:set_image(beautiful.widget_vol)
+--    end
+--    widget:set_text(" " .. volume_now.level .. "% ")
+--end
+--})
     -- Mute on click
-volumewidget:buttons(awful.util.table.join(awful.button({}, 1, function()
-            awful.util.spawn("amixer -q set Master playback toggle")
-            volumewidget.update()
-        end)))
-volumewidgetbg = wibox.widget.background(volumewidget ,"#313131")
+--volumewidget:buttons(awful.util.table.join(awful.button({}, 1, function()
+--            awful.util.spawn("amixer -q set Master playback toggle")
+--            volumewidget.update()
+--        end)))
+--volumewidgetbg = wibox.widget.background(volumewidget ,"#313131")
 
 -- Keyboard map indicator and changer
 handle = io.popen("xkb-switch")
@@ -472,9 +475,6 @@ for s = 1, screen.count() do
     
 
     right_layout:add(spr)
-    --right_layout:add(arrl)
-    --right_layout:add(volicon)
-    --right_layout:add(volumewidget)
     right_layout:add(arrl_ld)
     right_layout:add(mpdicon)
     right_layout:add(mpdwidgetbg)
@@ -495,10 +495,7 @@ for s = 1, screen.count() do
     right_layout:add(spr)
     right_layout:add(arrl_ld)
     right_layout:add(kbdwidget)
-    right_layout:add(voliconbg)
-    right_layout:add(volumewidgetbg)
     right_layout:add(mylayoutbox[s])
-    --right_layout:add(APW)
 
     -- Now bring it all together (with the tasklist in the middle)
     local layout = wibox.layout.align.horizontal()
@@ -508,8 +505,30 @@ for s = 1, screen.count() do
     mywibox[s]:set_widget(layout)
 
     -- Bottom layout
+    local right_layout_bot = wibox.layout.fixed.horizontal()
+    
+    arrl_apw = wibox.widget.imagebox()
+    local arrl_apw_update = function()
+        muted = APW:IsMuted()
+        if muted ~= arrl_apw_muted then
+            arrl_apw_muted = muted
+            if muted then
+                arrl_apw:set_image(beautiful.arrl_ld_pink)
+            else
+                arrl_apw:set_image(beautiful.arrl_ld)
+            end            
+        end 
+    end
+    arrl_apw_update()
+
+    APW:connect_signal("widget::updated", function() arrl_apw_update() end)
+
+    right_layout_bot:add(arrl_apw)
+    right_layout_bot:add(APW)
+
     local bottomlayout = wibox.layout.align.horizontal()
     bottomlayout:set_middle(mytasklist[s])
+    bottomlayout:set_right(right_layout_bot)
     mybottomwibox[s]:set_widget(bottomlayout)
 end
 -- }}}
@@ -626,27 +645,10 @@ globalkeys = awful.util.table.join(
     awful.key({ }, "XF86MonBrightnessUp", function ()
         awful.util.spawn("xbacklight -inc 10") end),
 
-    -- ALSA volume control
-    awful.key({ }, "XF86AudioRaiseVolume",
-      function ()
-        awful.util.spawn("amixer -q set Master 1%+")
-        volumewidget.update()
-    end),
-    awful.key({ }, "XF86AudioLowerVolume",
-      function ()
-        awful.util.spawn("amixer -q set Master 1%-")
-        volumewidget.update()
-      end),
-    awful.key({ }, "XF86AudioMute",
-      function ()
-        awful.util.spawn("amixer -q set Master playback toggle")
-        volumewidget.update()
-      end),
-    awful.key({ "Control" }, "XF86AudioMute",
-      function ()
-        awful.util.spawn("amixer -q set Master playback 100%")
-        volumewidget.update()
-      end),
+    -- Volume control
+    awful.key({ }, "XF86AudioRaiseVolume",  APW.Up),
+    awful.key({ }, "XF86AudioLowerVolume",  APW.Down),
+    awful.key({ }, "XF86AudioMute",         APW.ToggleMute),
 
     -- MPD control
     awful.key({ altkey, "Control" }, "Up",

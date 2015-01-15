@@ -59,6 +59,7 @@ theme.layout_floating               = themes_dir .. "/icons/floating.png"
 theme.arrl                          = themes_dir .. "/icons/arrl.png"
 theme.arrl_dl                       = themes_dir .. "/icons/arrl_dl.png"
 theme.arrl_ld                       = themes_dir .. "/icons/arrl_ld.png"
+theme.arrl_ld_pink                  = themes_dir .. "/icons/arrl_ld_pink.png"
 
 theme.widget_ac                     = themes_dir .. "/icons/ac.png"
 theme.widget_battery                = themes_dir .. "/icons/battery.png"
@@ -82,5 +83,13 @@ theme.tasklist_disable_icon         = false
 theme.tasklist_floating             = ""
 theme.tasklist_maximized_horizontal = ""
 theme.tasklist_maximized_vertical   = ""
+
+--{{{ APW
+theme.apw_fg_color = "#313131"
+theme.apw_bg_color = "#1A1A1A"
+theme.apw_mute_fg_color = "#CC9393"
+theme.apw_mute_bg_color = "#663333"
+theme.apw_show_text = true
+--}}}
 
 return theme
