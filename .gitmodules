@@ -3,7 +3,7 @@
     url = git://github.com/copycat-killer/lain.git
 [submodule "apw"]
     path = apw
-    url = https://github.com/plotnikovanton/apw 
+    url = git://github.com/plotnikovanton/apw 
 [submodule "revelation"]
     path = revelation
     url = git://github.com/YoRyan/awesome-redshift.git
