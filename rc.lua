@@ -288,7 +288,6 @@ mpdwidget = lain.widgets.mpd({
         widget:set_markup(markup("#EA6F81", artist) .. title)
     end
 })
-mpdwidgetbg = wibox.widget.background(mpdwidget, "#313131")
 
 -- MEM
 memicon = wibox.widget.imagebox(beautiful.widget_mem)
@@ -300,11 +299,11 @@ memwidget = lain.widgets.mem({
 
 -- CPU
 cpuicon = wibox.widget.imagebox(beautiful.widget_cpu)
-cpuwidget = wibox.widget.background(lain.widgets.cpu({
+cpuwidget = lain.widgets.cpu({
     settings = function()
         widget:set_text(" " .. cpu_now.usage .. "% ")
     end
-}), "#313131")
+})
 
 -- Coretemp
 tempicon = wibox.widget.imagebox(beautiful.widget_temp)
@@ -316,7 +315,8 @@ tempwidget = lain.widgets.temp({
 
 -- Battery
 baticon = wibox.widget.imagebox(beautiful.widget_battery)
-batwidget = wibox.widget.background(lain.widgets.bat({
+batwidget = lain.widgets.bat({
+    battery = "BAT1",
     settings = function()
         if bat_now.status == "Charging" then
             baticon:set_image(beautiful.widget_ac)
@@ -333,40 +333,14 @@ batwidget = wibox.widget.background(lain.widgets.bat({
         end
         widget:set_markup(" " .. bat_now.perc .. "% ")
     end
-}), "#313131")
-baticonbg = wibox.widget.background(baticon, "#313131")
-
-
--- ALSA volume
-volicon = wibox.widget.imagebox(beautiful.widget_vol)
-voliconbg = wibox.widget.background(volicon,"#313131")
---volumewidget = lain.widgets.alsa({
---  settings = function()
---    if volume_now.status == "off" then
---      volicon:set_image(beautiful.widget_vol_mute)
---    elseif tonumber(volume_now.level) == 0 then
---      volicon:set_image(beautiful.widget_vol_no)
---    elseif tonumber(volume_now.level) <= 50 then
---      volicon:set_image(beautiful.widget_vol_low)
---    else
---      volicon:set_image(beautiful.widget_vol)
---    end
---    widget:set_text(" " .. volume_now.level .. "% ")
---end
---})
-    -- Mute on click
---volumewidget:buttons(awful.util.table.join(awful.button({}, 1, function()
---            awful.util.spawn("amixer -q set Master playback toggle")
---            volumewidget.update()
---        end)))
---volumewidgetbg = wibox.widget.background(volumewidget ,"#313131")
+})
 
 -- Keyboard map indicator and changer
 handle = io.popen("xkb-switch")
 kbdtext = wibox.widget.textbox(' '..handle:read()..' ')
 handle:close()
     
-kbdwidget = wibox.widget.background(kbdtext, "#313131")
+kbdwidget = kbdtext
 kbdstrings = {[0] = " en ", [1] = " ru "}
 kbdwidget:buttons(awful.util.table.join(awful.button({}, 1, function()
                      os.execute('xkb-switch -n')
@@ -472,30 +446,32 @@ for s = 1, screen.count() do
     -- Widgets that are aligned to the upper right
     local right_layout = wibox.layout.fixed.horizontal()
     if s == 1 then right_layout:add(wibox.widget.systray()) end
-    
+   
+    local right_layout_toggle = true
+    function right_layout_add (...)  
+        local arg = {...}
+        if right_layout_toggle then
+            right_layout:add(arrl_ld)
+            for i, n in pairs(arg) do
+                right_layout:add(wibox.widget.background(n ,'#313131'))
+            end
+        else
+            right_layout:add(arrl_dl)
+            for i, n in pairs(arg) do
+                right_layout:add(n)
+            end
+        end
+        right_layout_toggle = not right_layout_toggle
+    end
 
     right_layout:add(spr)
-    right_layout:add(arrl_ld)
-    right_layout:add(mpdicon)
-    right_layout:add(mpdwidgetbg)
-    right_layout:add(arrl_dl)
-    right_layout:add(memicon)
-    right_layout:add(memwidget)
-    right_layout:add(arrl_ld)
-    right_layout:add(cpuicon)
-    right_layout:add(cpuwidget)
-    right_layout:add(arrl_dl)
-    right_layout:add(tempicon)
-    right_layout:add(tempwidget)
-    right_layout:add(arrl_ld)
-    right_layout:add(baticonbg)
-    right_layout:add(batwidget)
-    right_layout:add(arrl_dl)
-    right_layout:add(mytextclock)
-    right_layout:add(spr)
-    right_layout:add(arrl_ld)
-    right_layout:add(kbdwidget)
-    right_layout:add(mylayoutbox[s])
+    right_layout_add(mpdicon, mpdwidget)
+    right_layout_add(memicon, memwidget)
+    right_layout_add(cpuicon, cpuwidget)
+    right_layout_add(tempicon, tempwidget)
+    right_layout_add(baticon, batwidget)
+    right_layout_add(mytextclock, spr)
+    right_layout_add(kbdwidget, mylayoutbox[s])
 
     -- Now bring it all together (with the tasklist in the middle)
     local layout = wibox.layout.align.horizontal()
