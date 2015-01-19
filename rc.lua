@@ -12,7 +12,9 @@ local naughty   = require("naughty")
 local scratch   = require("scratch")
 local lain      = require("lain")
 local revelation= require("revelation")
+
 local APW = require("apw/widget")
+
 -- }}}
 
 -- {{{ Error handling
@@ -355,6 +357,24 @@ dbus.connect_signal("ru.gentoo.kbdd", function(...)
     end
 )
 
+-- Network widget
+local net_icon = wibox.widget.imagebox()
+local net_text = wibox.widget.textbox()
+local net_timer = timer({ timeout = 2 })
+local function net_update() 
+    local signal_level = awful.util.pread("awk 'NR==3 {printf \"%3.0f%\" ,($3/70)*100}' /proc/net/wireless")
+    if signal_level == '' then
+        net_text:set_text(" N/A ")
+    else
+        net_text:set_text(signal_level)
+    end
+end
+
+net_icon:set_image(beautiful.widget_net)
+net_text:set_text(" N/A ")
+net_timer:connect_signal("timeout", net_update)
+net_timer:start()
+
 -- Separators
 spr = wibox.widget.textbox(' ')
 arrl = wibox.widget.imagebox()
@@ -448,7 +468,7 @@ for s = 1, screen.count() do
     if s == 1 then right_layout:add(wibox.widget.systray()) end
    
     local right_layout_toggle = true
-    function right_layout_add (...)  
+    local function right_layout_add (...)  
         local arg = {...}
         if right_layout_toggle then
             right_layout:add(arrl_ld)
@@ -465,7 +485,7 @@ for s = 1, screen.count() do
     end
 
     right_layout:add(spr)
-    right_layout_add(mpdicon, mpdwidget)
+    right_layout_add(net_icon, net_text, spr)
     right_layout_add(memicon, memwidget)
     right_layout_add(cpuicon, cpuwidget)
     right_layout_add(tempicon, tempwidget)
