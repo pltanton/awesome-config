@@ -7,3 +7,6 @@
 [submodule "revelation"]
     path = revelation
     url = git://github.com/YoRyan/awesome-redshift.git
+[submodule "net_widgets"]
+    path = net_widgets
+    url = git@github.com:plotnikovanton/net_widgets.git
