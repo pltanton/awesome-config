@@ -14,8 +14,8 @@ local lain      = require("lain")
 local revelation= require("revelation")
 
 -- widgets
-local APW = require("apw/widget")
-local net_wireless = require("net_widgets/wireless")
+local APW       = require("apw/widget")
+local net_widgets =require("net_widgets")
 -- }}}
 
 -- {{{ Error handling
@@ -358,6 +358,12 @@ dbus.connect_signal("ru.gentoo.kbdd", function(...)
     end
 )
 
+-- Network widgets
+net_wireless    = net_widgets.wireless() 
+net_wired       = net_widgets.indicator({
+    interfaces = {"enp2s0"} 
+})
+
 -- Separators
 spr = wibox.widget.textbox(' ')
 arrl = wibox.widget.imagebox()
@@ -468,7 +474,7 @@ for s = 1, screen.count() do
     end
 
     right_layout:add(spr)
-    right_layout_add(net_wireless, spr)
+    right_layout_add(net_wired, net_wireless, spr)
     right_layout_add(memicon, memwidget)
     right_layout_add(cpuicon, cpuwidget)
     right_layout_add(tempicon, tempwidget)
