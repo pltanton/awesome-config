@@ -23,26 +23,34 @@ function widget:show(t_out)
     
     local msg
     if connected then
-        local essid     = " N/A "
-        local mac       = " N/A "
-        local bitrate   = " N/A "   
-        local f = io.popen("iwconfig "..INTERFACE)
+        f = io.popen("iwconfig "..INTERFACE)
        
         line    = f:read()      -- wlp1s0    IEEE 802.11abgn  ESSID:"ESSID" 
-        essid   = string.match(line, "ESSID:\"(.+)\"") or essid
+        essid   = string.match(line, "ESSID:\"(.+)\"") or " N/A "
         line    = f:read()      -- Mode:Managed  Frequency:2.437 GHz  Access Point: aa:bb:cc:dd:ee:ff
-        mac     = string.match(line, "Access Point: (.+)") or mac
+        mac     = string.match(line, "Access Point: (.+)") or " N/A "
         line    = f:read()      -- Bit Rate=36 Mb/s   Tx-Power=15 dBm 
-        bitrate = string.match(line, "Bit Rate=(.+/s)") or bitrate
+        bitrate = string.match(line, "Bit Rate=(.+/s)") or " N/A "
+        line    = f:read()      -- 
+
+        f:close()
+        f = io.popen("ifconfig "..INTERFACE)
+        
+        line    = f:read()      -- wlp1s0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        line    = f:read()      -- inet 192.168.1.15  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet    = string.match(line, "inet (%d+%.%d+%.%d+%.%d+)") or " N/A "
+
+        f:close()
+        
 
         msg = 
             "<span>".. -- configurable font here
             "ESSID:\t\t"..essid.."\n"..
+            "IP:\t\t"..inet.."\n"..
             "BSSID:\t\t"..mac.."\n"..
             "Bit rate:\t"..bitrate..
             "</span>"
 
-        --msg = awful.util.pread(" iwconfig wlp1s0 | awk 'NR==1 {printf \"ESSID:\\t\\t%s\\nIIIE:\\t\\t%s\\n\", substr($4,8,length($4)-8), $3} NR==2 {printf \"Acces Point:\\t%s\", $6}' ")
     else
         msg = "Wireless network is disconnected"
     end
