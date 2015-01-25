@@ -49,7 +49,6 @@ function run_once(cmd)
   awful.util.spawn_with_shell("pgrep -u $USER -x " .. findme .. " > /dev/null || (" .. cmd .. ")")
 end
 
-run_once("nm-applet")
 run_once("urxvtd")
 run_once("unclutter")
 run_once("pidgin")
@@ -529,6 +528,10 @@ root.buttons(awful.util.table.join(
 
 -- {{{ Key bindings(Hotkeys)
 globalkeys = awful.util.table.join(
+    -- Screenshot
+    awful.key({}, "Print", function() awful.util.spawn("screengrab --region") end),
+    awful.key({ modkey }, "Print", function() awful.util.spawn("screengrab --fullscreen") end),
+
     -- Display cycling
     awful.key({ modkey }, "F9", xrandr),
 
@@ -761,6 +764,11 @@ root.keys(globalkeys)
 -- {{{ Rules
 awful.rules.rules = {
     -- All clients will match this rule.
+    { rule = { class = "Screengrab" },
+      properties = {
+      floating = true      
+    }},
+    
     { rule = { class = "conky" },
       properties = {
       floating = true,
