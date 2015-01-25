@@ -359,7 +359,7 @@ dbus.connect_signal("ru.gentoo.kbdd", function(...)
 )
 
 -- Network widgets
-net_wireless    = net_widgets.wireless() 
+net_wireless    = net_widgets.wireless({interface="wlp1s0"}) 
 net_wired       = net_widgets.indicator({
     interfaces = {"enp2s0"} 
 })
