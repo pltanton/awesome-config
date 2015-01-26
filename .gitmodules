@@ -6,7 +6,7 @@
     url = git://github.com/plotnikovanton/apw 
 [submodule "revelation"]
     path = revelation
-    url = git://github.com/YoRyan/awesome-redshift.git
+    url =  https://github.com/guotsuan/awesome-revelation.git 
 [submodule "net_widgets"]
     path = net_widgets
     url = git@github.com:plotnikovanton/net_widgets.git
