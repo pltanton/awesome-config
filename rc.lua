@@ -8,7 +8,7 @@ local wibox     = require("wibox")
 local beautiful = require("beautiful")
 beautiful.init(os.getenv("HOME") .. "/.config/awesome/theme/theme.lua")
 
-local naughty   = require("naughty")
+naughty   = require("naughty") -- Should be global
 local scratch   = require("scratch")
 local lain      = require("lain")
 local revelation= require("revelation")
@@ -56,9 +56,8 @@ run_once("mpd")
 run_once("mpdscribble")
 run_once("kbdd")
 run_once("conky")
-run_once("udiskie --tray")
 run_once("clipit")
-
+run_once("udisks-glue -f &")
 -- }}}
 
 -- {{{ Variable definitions
@@ -77,7 +76,7 @@ editor     = os.getenv("EDITOR") or "nano" or "vi"
 editor_cmd = terminal .. " -e " .. editor
 
 -- user defined
-browser    = "chromium"
+browser    = "firefox"
 gui_editor = "gvim"
 
 local layouts = {
@@ -785,22 +784,11 @@ awful.rules.rules = {
                      keys = clientkeys,
                      buttons = clientbuttons,
 	                   size_hints_honor = false } },
-    { rule = { class = "URxvt" },
-          properties = { opacity = 0.99 } },
 
     { rule = { class = "MPlayer" },
           properties = { floating = true } },
 
-    { rule = { class = "Dwb" },
-          properties = { tag = tags[1][1] } },
-
-    { rule = { class = "Iron" },
-          properties = { tag = tags[1][1] } },
-
-    { rule = { instance = "plugin-container" },
-          properties = { tag = tags[1][1] } },
-
-	  { rule = { class = "Gimp" },
+	{ rule = { class = "Gimp" },
      	    properties = { tag = tags[1][5] } },
 
     { rule = { class = "Gimp", role = "gimp-image-window" },
@@ -814,7 +802,12 @@ awful.rules.rules = {
          properties = { tag = tags[1][2] } },
     { rule = { class = "Pidgin", role = "conversation"},
          properties = { tag = tags[1][2]}, callback = awful.client.setslave },     
-         
+        
+    
+    -- Firefox rules
+    { rule = { class = "Firefox", role="Preferences" },
+        properties = { floating = true } },
+
     { rule = { class = "Plugin-container" }, 
         properties = { focus = yes,
                        floating = true, 
