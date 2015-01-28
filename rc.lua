@@ -49,6 +49,7 @@ function run_once(cmd)
   awful.util.spawn_with_shell("pgrep -u $USER -x " .. findme .. " > /dev/null || (" .. cmd .. ")")
 end
 
+run_once("compton -b")
 run_once("urxvtd")
 run_once("unclutter")
 run_once("pidgin")
@@ -72,11 +73,12 @@ revelation.init()
 modkey     = "Mod4"
 altkey     = "Mod1"
 terminal   = "urxvtc" or "xterm"
-editor     = os.getenv("EDITOR") or "nano" or "vi"
+editor     = os.getenv("EDITOR") or "vim" or "vi"
 editor_cmd = terminal .. " -e " .. editor
 
 -- user defined
-browser    = "firefox"
+browser2 = "vimb-tabbed"
+browser = "firefox"
 gui_editor = "gvim"
 
 local layouts = {
@@ -807,6 +809,10 @@ awful.rules.rules = {
     -- Firefox rules
     { rule = { class = "Firefox", role="Preferences" },
         properties = { floating = true } },
+    
+    { rule = { class = "Navigator" },
+        properties = { border_width = 0,
+                       border_color = beautiful.border_focus } },
 
     { rule = { class = "Plugin-container" }, 
         properties = { focus = yes,
