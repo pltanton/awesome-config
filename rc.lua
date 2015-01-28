@@ -366,12 +366,12 @@ net_wired       = net_widgets.indicator({
 
 -- Separators
 spr = wibox.widget.textbox(' ')
-arrl = wibox.widget.imagebox()
-arrl:set_image(beautiful.arrl)
-arrl_dl = wibox.widget.imagebox()
-arrl_dl:set_image(beautiful.arrl_dl)
-arrl_ld = wibox.widget.imagebox()
-arrl_ld:set_image(beautiful.arrl_ld)
+
+arrl = wibox.widget.imagebox(beautiful.arrl)
+arrl_dl = wibox.widget.imagebox(beautiful.arrl_dl)
+arrl_ld = wibox.widget.imagebox(beautiful.arrl_ld)
+arrl_ld_back = wibox.widget.imagebox(beautiful.arrl_ld_back)
+arrl_ld_pink = wibox.widget.imagebox(beautiful.arrl_ld_pink)
 
 -- Create a wibox for each screen and add it
 mywibox = {}
