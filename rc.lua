@@ -16,6 +16,7 @@ local revelation= require("revelation")
 -- widgets
 local APW       = require("apw/widget")
 local net_widgets =require("net_widgets")
+local separators = require("separators")
 -- }}}
 
 -- {{{ Error handling
@@ -367,11 +368,10 @@ net_wired       = net_widgets.indicator({
 -- Separators
 spr = wibox.widget.textbox(' ')
 
-arrl = wibox.widget.imagebox(beautiful.arrl)
-arrl_dl = wibox.widget.imagebox(beautiful.arrl_dl)
-arrl_ld = wibox.widget.imagebox(beautiful.arrl_ld)
-arrl_ld_back = wibox.widget.imagebox(beautiful.arrl_ld_back)
-arrl_ld_pink = wibox.widget.imagebox(beautiful.arrl_ld_pink)
+spr_dl = separators:normal(beautiful.bg_focus, "alpha") 
+spr_ld = separators:normal("alpha", beautiful.bg_focus)
+spr_ld_back = separators:back("alpha", beautiful.bg_focus)
+spr_ld_pink = separators:back("alpha", beautiful.apw_mute_fg_color)
 
 -- Create a wibox for each screen and add it
 mywibox = {}
@@ -444,6 +444,7 @@ for s = 1, screen.count() do
     -- Create the wibox
     mywibox[s] = awful.wibox({ position = "top", screen = s, height = 18 })
     mybottomwibox[s] = awful.wibox({position = "bottom", screen = s, height = 18 })
+    
 
     -- Widgets that are aligned to the upper left
     local left_layout = wibox.layout.fixed.horizontal()
@@ -460,12 +461,12 @@ for s = 1, screen.count() do
     local function right_layout_add (...)  
         local arg = {...}
         if right_layout_toggle then
-            right_layout:add(arrl_ld)
+            right_layout:add(spr_ld)
             for i, n in pairs(arg) do
-                right_layout:add(wibox.widget.background(n ,'#313131'))
+                right_layout:add(wibox.widget.background(n ,beautiful.bg_focus))
             end
         else
-            right_layout:add(arrl_dl)
+            right_layout:add(spr_dl)
             for i, n in pairs(arg) do
                 right_layout:add(n)
             end
@@ -492,23 +493,19 @@ for s = 1, screen.count() do
     -- Bottom layout
     local right_layout_bot = wibox.layout.fixed.horizontal()
     
-    arrl_apw = wibox.widget.imagebox()
-    local arrl_apw_update = function()
-        muted = APW:IsMuted()
-        if muted ~= arrl_apw_muted then
-            arrl_apw_muted = muted
-            if muted then
-                arrl_apw:set_image(beautiful.arrl_ld_pink)
-            else
-                arrl_apw:set_image(beautiful.arrl_ld)
-            end            
-        end 
+    apw_spr = wibox.widget.base.make_widget()
+    apw_spr.fit = spr_ld.fit
+
+    apw_spr.draw = function(self, wibox, cr, width, height)
+        if APW.IsMuted() then
+            spr_ld_pink.draw(self, wibox, cr, width, height)
+        else
+            spr_ld_back.draw(self, wibox, cr, width, height)
+        end
     end
-    arrl_apw_update()
 
-    APW:connect_signal("widget::updated", function() arrl_apw_update() end)
 
-    right_layout_bot:add(arrl_apw)
+    right_layout_bot:add(apw_spr)
     right_layout_bot:add(APW)
 
     local bottomlayout = wibox.layout.align.horizontal()
