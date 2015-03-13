@@ -16,7 +16,7 @@ local revelation= require("revelation")
 -- widgets
 local APW       = require("apw/widget")
 local net_widgets =require("net_widgets")
-local separators = require("separators")
+local my_modules     = require("my_modules")
 -- }}}
 
 -- {{{ Error handling
@@ -104,15 +104,6 @@ for s = 1, screen.count() do
 end
 -- }}}
 
--- {{{ Disable DPMS
-local function dpms(c)
-    if c then
-        awful.util.spawn_with_shell("xset s off && xset -dpms &")
-    else
-        awful.util.spawn_with_shell("xset s on && xset +dpms &")
-    end
-end
--- }}}
 
 -- {{{ Wallpaper
 if beautiful.wallpaper then
@@ -260,7 +251,8 @@ end
 -- }}}
 
 -- {{{ Wibox
-markup = lain.util.markup
+markup      = lain.util.markup
+separators  = lain.util.separators
 
 -- Textclock
 clockicon = wibox.widget.imagebox(beautiful.widget_clock)
@@ -268,30 +260,6 @@ mytextclock = awful.widget.textclock(" %H:%M")
 
 -- calendar
 lain.widgets.calendar:attach(mytextclock, { font_size = 10 })
-
--- MPD
-mpdicon = wibox.widget.imagebox(beautiful.widget_music)
-mpdicon:buttons(awful.util.table.join(awful.button({ }, 1, function () awful.util.spawn_with_shell(musicplr) end)))
-mpdwidget = lain.widgets.mpd({
-    cover_size = 50,
-    settings = function()
-        if mpd_now.state == "play" then
-            artist = " " .. mpd_now.artist .. " "
-            title  = mpd_now.title  .. " "
-            mpdicon:set_image(beautiful.widget_music_on)
-        elseif mpd_now.state == "pause" then
-            artist = " mpd "
-            title  = "paused "
-            -- mpdicon:set_image(beautiful.pause)
-        else
-            artist = ""
-            title  = ""
-            mpdicon:set_image(beautiful.widget_music)
-        end
-
-        widget:set_markup(markup("#EA6F81", artist) .. title)
-    end
-})
 
 -- MEM
 memicon = wibox.widget.imagebox(beautiful.widget_mem)
@@ -345,7 +313,7 @@ kbdtext = wibox.widget.textbox(' '..handle:read()..' ')
 handle:close()
     
 kbdwidget = kbdtext
-kbdstrings = {[0] = " en ", [1] = " ru "}
+kbdstrings = {[0] = " en ", [1] = " ru ", [2] = "dvorak"}
 kbdwidget:buttons(awful.util.table.join(awful.button({}, 1, function()
                      os.execute('xkb-switch -n')
                   end))) 
@@ -360,18 +328,19 @@ dbus.connect_signal("ru.gentoo.kbdd", function(...)
 )
 
 -- Network widgets
-net_wireless    = net_widgets.wireless({interface="wlp1s0"}) 
-net_wired       = net_widgets.indicator({
-    interfaces = {"enp2s0"} 
-})
+net_wireless    = net_widgets.wireless({interface   = "wlp3s0", 
+                  onclick     = terminal .. " -e sudo wifi-menu" }) 
+
+-- Latte (caffeine)
+latte = my_modules.latte()
 
 -- Separators
 spr = wibox.widget.textbox(' ')
 
-spr_dl = separators:normal(beautiful.bg_focus, "alpha") 
-spr_ld = separators:normal("alpha", beautiful.bg_focus)
-spr_ld_back = separators:back("alpha", beautiful.bg_focus)
-spr_ld_pink = separators:back("alpha", beautiful.apw_mute_fg_color)
+spr_dl = separators.arrow_left(beautiful.bg_focus, "alpha") 
+spr_ld = separators.arrow_left("alpha", beautiful.bg_focus)
+spr_ld_back = separators.arrow_left("alpha", beautiful.bg_focus)
+spr_ld_pink = separators.arrow_left("alpha", beautiful.apw_mute_fg_color)
 
 -- Create a wibox for each screen and add it
 mywibox = {}
@@ -475,7 +444,8 @@ for s = 1, screen.count() do
     end
 
     right_layout:add(spr)
-    right_layout_add(net_wired, net_wireless, spr)
+    right_layout_add(latte)
+    right_layout_add(net_wireless, spr)
     right_layout_add(memicon, memwidget)
     right_layout_add(cpuicon, cpuwidget)
     right_layout_add(tempicon, tempwidget)
@@ -532,6 +502,36 @@ globalkeys = awful.util.table.join(
 
     -- Display cycling
     awful.key({ modkey }, "F9", xrandr),
+
+    -- Move clienth through tags
+    awful.key({ modkey, "Shift"   }, "Left",
+    function (c)
+        local curidx = awful.tag.getidx()
+        if curidx == 1 then
+            awful.client.movetotag(tags[client.focus.screen][#tags[client.focus.screen]])
+        else
+            awful.client.movetotag(tags[client.focus.screen][curidx - 1])
+        end
+        awful.tag.viewidx(-1)
+    end),
+    awful.key({ modkey, "Shift"   }, "Right",
+    function (c)
+        local curidx = awful.tag.getidx()
+        if curidx == #tags[client.focus.screen] then
+            awful.client.movetotag(tags[client.focus.screen][1])
+        else
+            awful.client.movetotag(tags[client.focus.screen][curidx + 1])
+        end
+        awful.tag.viewidx(1)
+    end),
+    
+    -- Move client throught screens
+    awful.key({ modkey, "Shift" }, ",",      function(c) awful.client.movetoscreen(c,c.screen-1) end ),
+    awful.key({ modkey, "Shift" }, ".",      function(c) awful.client.movetoscreen(c,c.screen+1) end ),
+    
+    -- Move focus to screen
+    awful.key({modkey,            }, "F1",     function () awful.screen.focus(1) end),
+    awful.key({modkey,            }, "F2",     function () awful.screen.focus(2) end),
 
     -- Tag browsing
     awful.key({ modkey }, "Left",   awful.tag.viewprev       ),
@@ -682,17 +682,15 @@ globalkeys = awful.util.table.join(
                   awful.util.eval, nil,
                   awful.util.getdir("cache") .. "/history_eval")
               end)
-)
+    )   
 
-clientkeys = awful.util.table.join(
+    clientkeys = awful.util.table.join(
     awful.key({ modkey,           }, "f",       function (c) 
                                                     c.fullscreen = not c.fullscreen  
-                                                    dpms(c.fullscreen)
                                                 end),
     awful.key({ modkey, "Shift"   }, "c",       function (c) 
                                                     if c.fullscreen then
                                                         c.fullscreen = not c.fullscreen
-                                                        dpms(c.fullscreen)
                                                     end
                                                     c:kill()                         
                                                 end),

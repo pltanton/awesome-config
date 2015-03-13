@@ -94,4 +94,5 @@ theme.apw_mute_bg_color = "#663333"
 theme.apw_show_text = true
 --}}}
 
+theme.separators_width              = 6
 return theme
