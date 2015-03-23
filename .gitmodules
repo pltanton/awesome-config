@@ -1,12 +1,15 @@
 [submodule "lain"]
     path = lain
-    url = git://github.com/copycat-killer/lain.git
+    url = https://github.com/copycat-killer/lain.git
 [submodule "apw"]
     path = apw
-    url = git://github.com/plotnikovanton/apw 
+    url = https://github.com/plotnikovanton/apw 
 [submodule "revelation"]
     path = revelation
     url =  https://github.com/guotsuan/awesome-revelation.git 
 [submodule "net_widgets"]
     path = net_widgets
-    url = git@github.com:plotnikovanton/net_widgets.git
+    url = https://github.com/plotnikovanton/net_widgets.git
+[submodule "terannycal"]
+    path = terranycal
+    url = https://github.com/Elv13/tyrannical
