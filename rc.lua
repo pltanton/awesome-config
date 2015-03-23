@@ -286,6 +286,7 @@ tempwidget = lain.widgets.temp({
 })
 
 -- Battery
+
 baticon = wibox.widget.imagebox(beautiful.widget_battery)
 batwidget = lain.widgets.bat({
     battery = "BAT1",
@@ -306,6 +307,33 @@ batwidget = lain.widgets.bat({
         widget:set_markup(" " .. bat_now.perc .. "% ")
     end
 })
+local function battary_time_grabber()
+    f = io.popen("acpi -b | awk '{print $5}' | awk -F \":\" '{print $1\":\"$2 }'")
+    str = f:read()
+    f.close()
+    return str.." remaining"
+end
+
+local battery_notify = nil
+function batwidget:hide()
+    if battary_notify ~= nil then
+        naughty.destroy(battary_notify)
+        battary_notify = nil
+    end
+end
+
+function batwidget:show(t_out)
+    batwidget:hide()
+
+    battary_notify = naughty.notify({
+        preset = fs_notification_preset,
+        text = battary_time_grabber(),
+        timeout = t_out,
+    })
+end
+
+batwidget:connect_signal('mouse::enter', function () batwidget:show(0) end)
+batwidget:connect_signal('mouse::leave', function () batwidget:hide() end)
 
 -- Keyboard map indicator and changer
 handle = io.popen("xkb-switch")
