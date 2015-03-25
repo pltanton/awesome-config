@@ -10,7 +10,13 @@ theme                               = {}
 themes_dir                          = os.getenv("HOME") .. "/.config/awesome/theme"
 theme.wallpaper                     = themes_dir .. "/wall.png"
 
-theme.useless_gap_width             = "5"
+theme.lain_icons         = os.getenv("HOME") .. "/.config/awesome/lain/icons/layout/default/"
+theme.layout_termfair    = theme.lain_icons .. "termfairw.png"
+theme.layout_cascade     = theme.lain_icons .. "cascadew.png"
+theme.layout_cascadetile = theme.lain_icons .. "cascadetilew.png"
+theme.layout_centerwork  = theme.lain_icons .. "centerworkw.png"
+
+theme.useless_gap_width             = "10"
 
 theme.font                          = "Terminus 9"
 theme.fg_normal                     = "#DDDDFF"
@@ -26,7 +32,8 @@ theme.border_marked                 = "#CC9393"
 theme.titlebar_bg_focus             = "#FFFFFF"
 theme.titlebar_bg_normal            = "#FFFFFF"
 theme.taglist_fg_focus              = "#345fa8"
-theme.tasklist_bg_focus             = "#1A1A1A"
+theme.tasklist_bg_focus             = "#1b1b1b"
+theme.tasklist_bg_norman            = theme.bg_focus
 theme.tasklist_fg_focus             = "#D8D782"
 theme.textbox_widget_margin_top     = 1
 theme.notify_fg                     = theme.fg_normal
@@ -38,18 +45,20 @@ theme.mouse_finder_color            = "#CC9393"
 theme.menu_height                   = "16"
 theme.menu_width                    = "140"
 
+theme.taglist_bg_focus              = theme.bg_normal
+
 theme.submenu_icon                  = themes_dir .. "/icons/submenu.png"
 theme.taglist_squares_sel           = themes_dir .. "/icons/square_sel.png"
 theme.taglist_squares_unsel         = themes_dir .. "/icons/square_unsel.png"
 
-theme.layout_tile                   = themes_dir .. "/icons/tile.png"
+theme.layout_uselesstile            = themes_dir .. "/icons/tile.png"
 theme.layout_tilegaps               = themes_dir .. "/icons/tilegaps.png"
 theme.layout_tileleft               = themes_dir .. "/icons/tileleft.png"
-theme.layout_tilebottom             = themes_dir .. "/icons/tilebottom.png"
+theme.layout_uselesstileh           = themes_dir .. "/icons/tilebottom.png"
 theme.layout_tiletop                = themes_dir .. "/icons/tiletop.png"
-theme.layout_fairv                  = themes_dir .. "/icons/fairv.png"
-theme.layout_fairh                  = themes_dir .. "/icons/fairh.png"
-theme.layout_spiral                 = themes_dir .. "/icons/spiral.png"
+theme.layout_uselessfair            = themes_dir .. "/icons/fairv.png"
+theme.layout_uselessfairh           = themes_dir .. "/icons/fairh.png"
+theme.layout_uselesspiral           = themes_dir .. "/icons/spiral.png"
 theme.layout_dwindle                = themes_dir .. "/icons/dwindle.png"
 theme.layout_max                    = themes_dir .. "/icons/max.png"
 theme.layout_fullscreen             = themes_dir .. "/icons/fullscreen.png"
@@ -81,6 +90,7 @@ theme.widget_vol_mute               = themes_dir .. "/icons/vol_mute.png"
 theme.widget_mail                   = themes_dir .. "/icons/mail.png"
 theme.widget_mail_on                = themes_dir .. "/icons/mail_on.png"
 
+theme.tasklist_show_names           = false
 theme.tasklist_disable_icon         = false
 theme.tasklist_floating             = ""
 theme.tasklist_maximized_horizontal = ""

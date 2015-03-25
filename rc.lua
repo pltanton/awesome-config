@@ -12,6 +12,7 @@ naughty   = require("naughty") -- Should be global
 local scratch   = require("scratch")
 local lain      = require("lain")
 local revelation= require("revelation")
+local tyrannical= require("tyrannical")
 
 -- widgets
 local APW       = require("apw/widget")
@@ -56,7 +57,6 @@ run_once("unclutter")
 run_once("pidgin")
 run_once("mpd")
 run_once("mpdscribble")
-run_once("kbdd")
 run_once("conky")
 run_once("clipit")
 run_once("udisks-glue -f &")
@@ -82,26 +82,87 @@ browser2 = "vimb-tabbed"
 browser = "firefox"
 gui_editor = "gvim"
 
+lain.layout.centerfair.nmaster = 3
+lain.layout.centerfair.ncol = 2
 local layouts = {
     awful.layout.suit.floating,
-    awful.layout.suit.tile,
-    awful.layout.suit.tile.bottom,
-    awful.layout.suit.fair,
-    awful.layout.suit.fair.horizontal,
+    lain.layout.uselesstile,
+    lain.layout.uselessfair,
+    lain.layout.uselesspiral,
 }
 -- }}}
 
 -- {{{ Tags
-tags = {
-   names = { "web", "im", "dev", "term", "media", "other"},
-   layout = { layouts[2], layouts[2], layouts[2], layouts[2], layouts[1], layouts[1] }
+tyrannical.tags = {
+    {
+        name        = "Web",
+        init        = true,
+        exclusive   = true,
+        screen      = {1,2},
+        layout      = layouts[2],
+        class       = {"Firefox", "chrome", "chromium"}
+    },
+    {
+        name        = "Term",
+        init        = true,
+        exclusive   = true,
+        layout      = layouts[3], 
+        screen      = {1,2},
+        class       = {"xterm", "urxvt", }
+    },
+    {
+        name        = "Dev",
+        init        = true,
+        exclusive   = true,
+        exclusive   = true,
+        screen      = {1,2},
+        layout      = layouts[2],
+        class       = {"gvim", "idea"}
+    },
+    {
+        name        = "Files",
+        init        = true,
+        screen      = {1,2},
+        layout      = layouts[2], 
+        class       = {"pcmanfm"} 
+    },
+    {
+        name        = "Media",
+        layout      = layouts[0],
+        init        = true,
+        class       = {"mpv"}
+    },
+    {
+        name        = "Doc",
+        init        = false, -- This tag wont be created at startup, but will be when one of the
+                             -- client in the "class" section will start. It will be created on
+                             -- the client startup screen
+        exclusive   = true,
+        layout      = awful.layout.suit.max,
+        class       = {
+            "Assistant"     , "Okular"         , "Evince"    , "EPDFviewer"   , "xpdf",
+            "Xpdf"          , "zathura"                                        }
+    } ,
+    {
+        name        = "Pidgin",
+        init        = true,
+        screen      = {1},
+        layout      = layouts[2],
+        execute     = true,
+        --hide        = true, 
+        mwfact      = 0.20,
+        no_focus_stealing_in = true,
+        ncol        = 2,
+        class       = {"Pidgin"}
+
+    }
 }
 
-for s = 1, screen.count() do 
-  tags[s] = awful.tag(tags.names, s, tags.layout)
-  awful.tag.setncol(2, tags[s][2])                         
-  awful.tag.setproperty(tags[s][2], "mwfact", 0.20)       
-end
+tyrannical.properties.intrusive = {"urxvt", "arandr"}
+tyrannical.properties.float = {"arandr"}
+
+tyrannical.settings.block_children_focus_stealing = true --Block popups ()
+tyrannical.settings.group_children = true --Force popups/dialogs to have the same tags as the parent client
 -- }}}
 
 
@@ -337,21 +398,25 @@ batwidget:connect_signal('mouse::leave', function () batwidget:hide() end)
 
 -- Keyboard map indicator and changer
 handle = io.popen("xkb-switch")
-kbdtext = wibox.widget.textbox(' '..handle:read()..' ')
+kbdtext = wibox.widget.textbox(handle:read())
 handle:close()
     
+kbddnotufy = nil
 kbdwidget = kbdtext
-kbdstrings = {[0] = " en ", [1] = " ru ", [2] = "dvorak"}
+kbdstrings = {[0] = "en", [1] = "ru", [2] = "dvorak"}
 kbdwidget:buttons(awful.util.table.join(awful.button({}, 1, function()
                      os.execute('xkb-switch -n')
                   end))) 
-              
+
 dbus.request_name("session", "ru.gentoo.kbdd")
 dbus.add_match("session", "interface='ru.gentoo.kbdd',member='layoutChanged'")
-dbus.connect_signal("ru.gentoo.kbdd", function(...)
+dbus.connect_signal("ru.gentoo.kbdd", function(...) 
         local data = {...}
         local layout = data[2]
         kbdtext:set_markup(kbdstrings[layout])
+        
+        naughty.destroy(kbddnotufy)
+        kbddnotufy = naughty.notify({text = "Layout changed to "..kbdstrings[layout], timeout = 0.5})
     end
 )
 
@@ -364,17 +429,19 @@ latte = my_modules.latte()
 
 -- Separators
 spr = wibox.widget.textbox(' ')
-
+  
+    -- left
 spr_dl = separators.arrow_left(beautiful.bg_focus, "alpha") 
 spr_ld = separators.arrow_left("alpha", beautiful.bg_focus)
-spr_ld_back = separators.arrow_left("alpha", beautiful.bg_focus)
-spr_ld_pink = separators.arrow_left("alpha", beautiful.apw_mute_fg_color)
+    -- right
+spr_ld_r = separators.arrow_right(beautiful.bg_focus, "alpha") 
+spr_dl_r = separators.arrow_right("alpha", beautiful.bg_focus)
 
 -- Create a wibox for each screen and add it
 mywibox = {}
+mylayoutbox = {}
 mybottomwibox = {}
 mypromptbox = {}
-mylayoutbox = {}
 mytaglist = {}
 mytaglist.buttons = awful.util.table.join(
                     awful.button({ }, 1, awful.tag.viewonly),
@@ -422,7 +489,7 @@ mytasklist.buttons = awful.util.table.join(
 for s = 1, screen.count() do
 
     -- Create a promptbox for each screen
-    mypromptbox[s] = awful.widget.prompt()
+    mypromptbox[s] = awful.widget.prompt{prompt=" Run: "}
 
     -- We need one layoutbox per screen.
     mylayoutbox[s] = awful.widget.layoutbox(s)
@@ -436,23 +503,28 @@ for s = 1, screen.count() do
     mytaglist[s] = awful.widget.taglist(s, awful.widget.taglist.filter.all, mytaglist.buttons)
 
     -- Create a tasklist widget
-    mytasklist[s] = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, mytasklist.buttons)
+    mytasklist[s] = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, mytasklist.buttons)--,wibox.layout.fixed.horizontal)
 
     -- Create the wibox
     mywibox[s] = awful.wibox({ position = "top", screen = s, height = 18 })
-    mybottomwibox[s] = awful.wibox({position = "bottom", screen = s, height = 18 })
+    --mybottomwibox[s] = awful.wibox({position = "bottom", screen = s, height = 18 })
     
 
     -- Widgets that are aligned to the upper left
     local left_layout = wibox.layout.fixed.horizontal()
-    left_layout:add(spr)
+    left_layout:add(wibox.widget.background(mylayoutbox[s], beautiful.bg_focus))
+    left_layout:add(spr_ld_r)
     left_layout:add(mytaglist[s])
-    left_layout:add(mypromptbox[s])
+    left_layout:add(spr_dl_r)
+    left_layout:add(wibox.widget.background(mypromptbox[s], beautiful.bg_focus))
+    left_layout:add(spr_ld_r)
     left_layout:add(spr)
+    left_layout:add(mytasklist[s])
 
     -- Widgets that are aligned to the upper right
     local right_layout = wibox.layout.fixed.horizontal()
-    if s == 1 then right_layout:add(wibox.widget.systray()) end
+
+    right_layout:add(wibox.widget.systray())
    
     local right_layout_toggle = true
     local function right_layout_add (...)  
@@ -479,37 +551,39 @@ for s = 1, screen.count() do
     right_layout_add(tempicon, tempwidget)
     right_layout_add(baticon, batwidget)
     right_layout_add(mytextclock, spr)
-    right_layout_add(kbdwidget, mylayoutbox[s])
+    right_layout_add(spr, kbdwidget, spr)
+    
+    
+    -- Volume widget
+    if right_layout_toggle then
+        apw_left_color = "alpha"
+    else 
+        apw_left_color = beautiful.bg_focus
+    end
 
-    -- Now bring it all together (with the tasklist in the middle)
-    local layout = wibox.layout.align.horizontal()
-    layout:set_left(left_layout)
-    --layout:set_middle(mytasklist[s])
-    layout:set_right(right_layout)
-    mywibox[s]:set_widget(layout)
-
-    -- Bottom layout
-    local right_layout_bot = wibox.layout.fixed.horizontal()
+    spr_ld_apw1 = separators.arrow_left(apw_left_color, beautiful.apw_fg_color)
+    spr_ld_apw2 = separators.arrow_left(apw_left_color, beautiful.apw_mute_fg_color)
     
     apw_spr = wibox.widget.base.make_widget()
     apw_spr.fit = spr_ld.fit
 
     apw_spr.draw = function(self, wibox, cr, width, height)
         if APW.IsMuted() then
-            spr_ld_pink.draw(self, wibox, cr, width, height)
+            spr_ld_apw2.draw(self, wibox, cr, width, height)
         else
-            spr_ld_back.draw(self, wibox, cr, width, height)
+            spr_ld_apw1.draw(self, wibox, cr, width, height)
         end
     end
 
-
-    right_layout_bot:add(apw_spr)
-    right_layout_bot:add(APW)
-
-    local bottomlayout = wibox.layout.align.horizontal()
-    bottomlayout:set_middle(mytasklist[s])
-    bottomlayout:set_right(right_layout_bot)
-    mybottomwibox[s]:set_widget(bottomlayout)
+    right_layout:add(apw_spr)
+    right_layout:add(APW)
+    
+    -- Now bring it all together (with the tasklist in the middle)
+    local layout = wibox.layout.align.horizontal()
+    layout:set_left(left_layout)
+    --layout:set_middle(mytasklist[s])
+    layout:set_right(right_layout)
+    mywibox[s]:set_widget(layout)
 end
 -- }}}
  
@@ -705,7 +779,7 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey }, "r", function () mypromptbox[mouse.screen]:run() end),
     awful.key({ modkey }, "x",
               function ()
-                  awful.prompt.run({ prompt = "Run Lua code: " },
+                  awful.prompt.run({ prompt = " Run Lua code: " },
                   mypromptbox[mouse.screen].widget,
                   awful.util.eval, nil,
                   awful.util.getdir("cache") .. "/history_eval")
@@ -813,8 +887,6 @@ awful.rules.rules = {
     { rule = { class = "MPlayer" },
           properties = { floating = true } },
 
-	{ rule = { class = "Gimp" },
-     	    properties = { tag = tags[1][5] } },
 
     { rule = { class = "Gimp", role = "gimp-image-window" },
           properties = { maximized_horizontal = true,
@@ -823,11 +895,8 @@ awful.rules.rules = {
     { rule = { class = "Shutter"},
             properties = { floating = true } },
     
-    { rule = { class = "Pidgin", role = "buddy_list"},
-         properties = { tag = tags[1][2] } },
     { rule = { class = "Pidgin", role = "conversation"},
-         properties = { tag = tags[1][2]}, callback = awful.client.setslave },     
-        
+        properties = { callback = awful.client.setslave } }, 
     
     -- Firefox rules
     { rule = { class = "Firefox", role="Preferences" },
@@ -864,7 +933,6 @@ client.connect_signal("manage", function (c, startup)
     end
 end)
 
--- No border for maximized clients
 client.connect_signal("focus",
     function(c)
         if c.maximized_horizontal == true and c.maximized_vertical == true then
