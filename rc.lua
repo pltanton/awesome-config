@@ -99,6 +99,7 @@ tyrannical.tags = {
         name        = "Web",
         init        = true,
         exclusive   = true,
+        Default     = true,
         screen      = {1,2},
         layout      = layouts[2],
         class       = {"Firefox", "chrome", "chromium"}
@@ -520,12 +521,12 @@ for s = 1, screen.count() do
                 ib = wibox.widget.imagebox()
                 tb = wibox.widget.textbox()
                 bgb = wibox.widget.background()
-                m = wibox.layout.margin(ib, 4, 4)
+                m = wibox.layout.margin(ib, 2, 2, 2, 2)
                 l = wibox.layout.fixed.horizontal()
 
                 -- All of this is added in a fixed widget
                 l:fill_space(true)
-                l:add(ib)
+                l:add(m)
                 --l:add(m)
 
                 -- And all of this gets a background
