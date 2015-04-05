@@ -13,7 +13,6 @@ naughty   = require("naughty") -- Should be global
 local scratch   = require("scratch")
 local lain      = require("lain")
 local revelation= require("revelation")
-local tyrannical= require("tyrannical")
 
 -- widgets
 local APW       = require("apw/widget")
@@ -94,77 +93,15 @@ local layouts = {
 -- }}}
 
 -- {{{ Tags
-tyrannical.tags = {
-    {
-        name        = "Web",
-        init        = true,
-        exclusive   = true,
-        Default     = true,
-        screen      = {1,2},
-        layout      = layouts[2],
-        class       = {"Firefox", "chrome", "chromium"}
-    },
-    {
-        name        = "Term",
-        init        = true,
-        exclusive   = true,
-        layout      = layouts[3], 
-        screen      = {1,2},
-        class       = {"xterm", "urxvt", }
-    },
-    {
-        name        = "Dev",
-        init        = true,
-        exclusive   = true,
-        exclusive   = true,
-        screen      = {1,2},
-        layout      = layouts[2],
-        class       = {"gvim", "idea"}
-    },
-    {
-        name        = "Files",
-        init        = true,
-        screen      = {1,2},
-        layout      = layouts[2], 
-        class       = {"pcmanfm"} 
-    },
-    {
-        name        = "Media",
-        layout      = layouts[0],
-        init        = true,
-        class       = {"mpv"}
-    },
-    {
-        name        = "Doc",
-        init        = false, -- This tag wont be created at startup, but will be when one of the
-                             -- client in the "class" section will start. It will be created on
-                             -- the client startup screen
-        exclusive   = true,
-        layout      = awful.layout.suit.max,
-        class       = {
-            "Assistant"     , "Okular"         , "Evince"    , "EPDFviewer"   , "xpdf",
-            "Xpdf"          , "zathura"                                        }
-    } ,
-    {
-        name        = "Pidgin",
-        init        = true,
-        screen      = {1},
-        layout      = layouts[2],
-        execute     = true,
-        --hide        = true, 
-        mwfact      = 0.20,
-        no_focus_stealing_in = true,
-        ncol        = 2,
-        class       = {"Pidgin"}
-
-    }
+tags = {
+names = { "web", "im", "dev", "term", "media", "other"},
+layout = { layouts[2], layouts[2], layouts[2], layouts[2], layouts[1], layouts[1] }
 }
-
-tyrannical.properties.intrusive = {"urxvt", "arandr"}
-tyrannical.properties.float = {"arandr"}
-
-tyrannical.settings.block_children_focus_stealing = true --Block popups ()
-tyrannical.settings.group_children = true --Force popups/dialogs to have the same tags as the parent client
+for s = 1, screen.count() do
+tags[s] = awful.tag(tags.names, s, tags.layout)
+awful.tag.setncol(2, tags[s][2])
+awful.tag.setproperty(tags[s][2], "mwfact", 0.20)
+end
 -- }}}
 
 
@@ -577,9 +514,9 @@ for s = 1, screen.count() do
 
     -- Widgets that are aligned to the upper right
     local right_layout = wibox.layout.fixed.horizontal()
-
+if s == 1 then
     right_layout:add(wibox.widget.systray())
-   
+end 
     local right_layout_toggle = true
     local function right_layout_add (...)  
         local arg = {...}
@@ -949,9 +886,11 @@ awful.rules.rules = {
     { rule = { class = "Shutter"},
             properties = { floating = true } },
     
+    { rule = { class = "Pidgin", role = "buddy_list"},
+            properties = { tag = tags[1][2] } },
     { rule = { class = "Pidgin", role = "conversation"},
-        properties = { callback = awful.client.setslave } }, 
-    
+            properties = { tag = tags[1][2]}, callback = awful.client.setslave },
+
     -- Firefox rules
     { rule = { class = "Firefox", role="Preferences" },
         properties = { floating = true } },

@@ -10,6 +10,8 @@ theme                               = {}
 themes_dir                          = os.getenv("HOME") .. "/.config/awesome/theme"
 theme.wallpaper                     = themes_dir .. "/wall.png"
 
+theme.icon_theme                    = "Faenza"
+
 theme.lain_icons         = os.getenv("HOME") .. "/.config/awesome/lain/icons/layout/default/"
 theme.layout_termfair    = theme.lain_icons .. "termfairw.png"
 theme.layout_cascade     = theme.lain_icons .. "cascadew.png"
@@ -32,10 +34,10 @@ theme.border_marked                 = "#CC9393"
 theme.titlebar_bg_focus             = "#FFFFFF"
 theme.titlebar_bg_normal            = "#FFFFFF"
 theme.taglist_fg_focus              = "#345fa8"
-theme.tasklist_bg_focus             = theme.bg_focus
+theme.tasklist_bg_focus             = "#345fa8"
 --theme.tasklist_bg_norman            = theme.bg_focus
 theme.tasklist_fg_focus             = "#D8D782"
-theme.tasklist_default_icon         = "/usr/share/icons/Faenza/apps/32/terminal.png"
+theme.tasklist_default_icon         = "/usr/share/icons/Faenza/places/32/archlinux-logo.png"
 theme.textbox_widget_margin_top     = 1
 theme.notify_fg                     = theme.fg_normal
 theme.notify_bg                     = theme.bg_normal
