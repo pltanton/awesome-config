@@ -10,6 +10,3 @@
 [submodule "net_widgets"]
     path = net_widgets
     url = https://github.com/plotnikovanton/net_widgets.git
-[submodule "terannycal"]
-    path = terranycal
-    url = https://github.com/Elv13/tyrannical

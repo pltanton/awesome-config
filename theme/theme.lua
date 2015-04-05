@@ -49,6 +49,7 @@ theme.menu_height                   = "16"
 theme.menu_width                    = "140"
 
 theme.taglist_bg_focus              = theme.bg_normal
+theme.tagsh                         = 2
 
 theme.submenu_icon                  = themes_dir .. "/icons/submenu.png"
 theme.taglist_squares_sel           = themes_dir .. "/icons/square_sel.png"

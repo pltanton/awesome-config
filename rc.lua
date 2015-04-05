@@ -94,8 +94,8 @@ local layouts = {
 
 -- {{{ Tags
 tags = {
-names = { "web", "im", "dev", "term", "media", "other"},
-layout = { layouts[2], layouts[2], layouts[2], layouts[2], layouts[1], layouts[1] }
+names = { "web", "im", "dev", "term", "media", "games", "other"},
+layout = { layouts[2], layouts[2], layouts[2], layouts[2], layouts[1], layouts[1], layouts[1] }
 }
 for s = 1, screen.count() do
 tags[s] = awful.tag(tags.names, s, tags.layout)
@@ -378,6 +378,7 @@ spr_dl_r = separators.arrow_right("alpha", beautiful.bg_focus)
 
 -- Create a wibox for each screen and add it
 mywibox = {}
+mytagwibox = {}
 mylayoutbox = {}
 mybottomwibox = {}
 mypromptbox = {}
@@ -390,6 +391,7 @@ mytaglist.buttons = awful.util.table.join(
                     awful.button({ }, 4, function(t) awful.tag.viewnext(awful.tag.getscreen(t)) end),
                     awful.button({ }, 5, function(t) awful.tag.viewprev(awful.tag.getscreen(t)) end)
                     )
+mytaglist2 = {}
 mytasklist = {}
 mytasklist.buttons = awful.util.table.join(
                      awful.button({ }, 1, function (c)
@@ -439,8 +441,8 @@ for s = 1, screen.count() do
                             awful.button({ }, 5, function () awful.layout.inc(layouts, -1) end)))
 
     -- Create a taglist widget
-    mytaglist[s] = awful.widget.taglist(s, awful.widget.taglist.filter.all, mytaglist.buttons)
-
+    --mytaglist[s] = awful.widget.taglist(s, awful.widget.taglist.filter.all, mytaglist.buttons)
+    mytaglist[s] = my_modules.taglist(s, awful.widget.taglist.filter.all, mytaglist.buttons)
     -- Create a tasklist widget
     
     local function tasklist_update(w, buttons, label, data, objects, nomargin)
@@ -497,15 +499,15 @@ for s = 1, screen.count() do
     mytasklist[s] = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, mytasklist.buttons, nil, tasklist_update, wibox.layout.fixed.horizontal())
 
     -- Create the wibox
-    mywibox[s] = awful.wibox({ position = "top", screen = s, height = 18 })
-    --mybottomwibox[s] = awful.wibox({position = "bottom", screen = s, height = 18 })
-    
+    local tagsh = theme.tagsh or 3
+    mywibox[s] = awful.wibox({ position = "top", screen = s, height = 18+tagsh })
+    mytagwibox[s] = awful.wibox({position = "top", screen = s, height = tagsh })
 
     -- Widgets that are aligned to the upper left
     local left_layout = wibox.layout.fixed.horizontal()
     left_layout:add(wibox.widget.background(mylayoutbox[s], beautiful.bg_focus))
     left_layout:add(spr_ld_r)
-    left_layout:add(mytaglist[s])
+    --left_layout:add(mytaglist[s])
     left_layout:add(spr_dl_r)
     left_layout:add(wibox.widget.background(mypromptbox[s], beautiful.bg_focus))
     left_layout:add(spr_ld_r)
@@ -570,11 +572,15 @@ end
     right_layout:add(APW)
     
     -- Now bring it all together (with the tasklist in the middle)
+    mytagwibox[s]:set_widget(mytaglist[s])
     local layout = wibox.layout.align.horizontal()
     layout:set_left(left_layout)
     --layout:set_middle(mytasklist[s])
     layout:set_right(right_layout)
-    mywibox[s]:set_widget(layout)
+    
+    local layoutmargin = wibox.layout.margin(layout)
+    layoutmargin:set_top(tagsh)
+    mywibox[s]:set_widget(layoutmargin)
 end
 -- }}}
  
