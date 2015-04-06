@@ -391,7 +391,6 @@ mytaglist.buttons = awful.util.table.join(
                     awful.button({ }, 4, function(t) awful.tag.viewnext(awful.tag.getscreen(t)) end),
                     awful.button({ }, 5, function(t) awful.tag.viewprev(awful.tag.getscreen(t)) end)
                     )
-mytaglist2 = {}
 mytasklist = {}
 mytasklist.buttons = awful.util.table.join(
                      awful.button({ }, 1, function (c)
@@ -445,58 +444,7 @@ for s = 1, screen.count() do
     mytaglist[s] = my_modules.taglist(s, awful.widget.taglist.filter.all, mytaglist.buttons)
     -- Create a tasklist widget
     
-    local function tasklist_update(w, buttons, label, data, objects, nomargin)
-        -- update the widgets, creating them if needed
-        w:reset()
-        for i, o in ipairs(objects) do
-            local cache = data[o]
-            local ib, tb, bgb, m, l
-            if cache then
-                ib = cache.ib
-                tb = cache.tb
-                bgb = cache.bgb
-                m   = cache.m
-            else
-                ib = wibox.widget.imagebox()
-                tb = wibox.widget.textbox()
-                bgb = wibox.widget.background()
-                m = wibox.layout.margin(ib, 2, 2, 2, 2)
-                l = wibox.layout.fixed.horizontal()
-
-                -- All of this is added in a fixed widget
-                l:fill_space(true)
-                l:add(m)
-                --l:add(m)
-
-                -- And all of this gets a background
-                bgb:set_widget(l)
-
-                bgb:buttons(common.create_buttons(buttons, o))
-
-                data[o] = {
-                    ib = ib,
-                    tb = tb,
-                    bgb = bgb,
-                    m   = m
-                }
-            end
-
-            local text, bg, bg_image, icon = label(o)
-            icon = icon or theme.tasklist_default_icon
-            -- The text might be invalid, so use pcall
-            if not pcall(tb.set_markup, tb, text) then
-                tb:set_markup("<i>&lt;Invalid text&gt;</i>")
-            end
-            bgb:set_bg(bg)
-            if type(bg_image) == "function" then
-                bg_image = bg_image(tb,o,m,objects,i)
-            end
-            bgb:set_bgimage(bg_image)
-            ib:set_image(icon)
-            w:add(bgb)
-        end
-    end
-    mytasklist[s] = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, mytasklist.buttons, nil, tasklist_update, wibox.layout.fixed.horizontal())
+    mytasklist[s] = my_modules.tasklist(s, awful.widget.tasklist.filter.currenttags, mytasklist.buttons)
 
     -- Create the wibox
     local tagsh = theme.tagsh or 3
@@ -512,7 +460,7 @@ for s = 1, screen.count() do
     left_layout:add(wibox.widget.background(mypromptbox[s], beautiful.bg_focus))
     left_layout:add(spr_ld_r)
     left_layout:add(spr)
-    left_layout:add(mytasklist[s])
+    --left_layout:add(mytasklist[s])
 
     -- Widgets that are aligned to the upper right
     local right_layout = wibox.layout.fixed.horizontal()
@@ -575,7 +523,7 @@ end
     mytagwibox[s]:set_widget(mytaglist[s])
     local layout = wibox.layout.align.horizontal()
     layout:set_left(left_layout)
-    --layout:set_middle(mytasklist[s])
+    layout:set_middle(mytasklist[s])
     layout:set_right(right_layout)
     
     local layoutmargin = wibox.layout.margin(layout)
@@ -773,7 +721,8 @@ globalkeys = awful.util.table.join(
     awful.key({ modkey }, "g", function () awful.util.spawn(graphics) end),
 
     -- Prompt
-    awful.key({ modkey }, "r", function () mypromptbox[mouse.screen]:run() end),
+    awful.key({ modkey }, "r" ,function () awful.util.spawn("gmrun") end),
+    awful.key({ modkey , "Shift"}, "r", function () mypromptbox[mouse.screen]:run() end),
     awful.key({ modkey }, "x",
               function ()
                   awful.prompt.run({ prompt = " Run Lua code: " },

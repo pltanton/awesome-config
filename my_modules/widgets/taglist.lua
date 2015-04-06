@@ -72,25 +72,38 @@ local function my_list_update(w, buttons, label, data, objects)
     -- update the widgets, creating them if needed
     w:reset()
     for i, o in ipairs(objects) do
-        
-        local is_selected, got_client, is_urgent = label(o)
-        local s = wibox.widget.base.make_widget()
-        local height = theme.tagsh or 2
-        
-        s.color = theme.bg_normal or "#000000"
-        s.fit = function(m, w, h) return w, height end
-        s.draw = function(mycross, wibox, cr, width, height)
-            cr:set_source_rgb(gears.color.parse_color(s.color))
-            cr:rectangle(5,0,width-5,height)
-            cr:fill()
+        local cache = data[o]
+        local s
+        if cache then
+            s = cache.s
+        else
+            s = wibox.widget.base.make_widget()
+            local height = theme.tagsh or 2
+
+            s.color = theme.bg_normal or "#000000"
+            s.fit = function(m, w, h) return w, height end
+            s.draw = function(mycross, wibox, cr, width, height)
+                cr:set_source_rgb(gears.color.parse_color(s.color))
+                cr:rectangle(5,0,width-5,height)
+                cr:fill()
+            end
+
+            s:buttons(common.create_buttons(buttons, o))
+            
+            data[o] = {
+                s = s
+            }
         end
 
+        local is_selected, got_client, is_urgent = label(o)
         if is_selected then 
             s.color = theme.taglist_selected or "#CCCCCC"
         elseif is_urgent then
             s.color = theme.taglist_urgent or "#7f0000"
         elseif got_client then
             s.color = theme.taglist_got_clients or "#555555"
+        else
+            s.color = theme.bg_normal or "#000000"
         end
 
         w:add(s)
