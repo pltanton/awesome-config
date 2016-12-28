@@ -1,3 +1,6 @@
+-- Keyboard map indicator and switcher
+mykeyboardlayout = awful.widget.keyboardlayout()
+
 local function client_menu_toggle_fn()
     local instance = nil
 
