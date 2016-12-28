@@ -1,3 +1,5 @@
+modkey = "Mod4"
+
 -- {{{ Key bindings
 globalkeys = awful.util.table.join(
     awful.key({ modkey,           }, "s",      hotkeys_popup.show_help,
