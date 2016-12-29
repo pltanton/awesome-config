@@ -1,7 +1,7 @@
 -- {{{ Variable definitions
 hotkeys_popup = require("awful.hotkeys_popup").widget
 -- Themes define colours, icons, font and wallpapers.
-beautiful.init(awful.util.get_configuration_dir().."themes/tomorrow/theme.lua")
+beautiful.init(awful.util.get_configuration_dir().."themes/tomorrow.lua")
 
 -- This is used later as the default terminal and editor to run.
 terminal = "termite"

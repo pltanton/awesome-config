@@ -1,6 +1,3 @@
--- Keyboard map indicator and switcher
-mykeyboardlayout = awful.widget.keyboardlayout()
-
 local function client_menu_toggle_fn()
     local instance = nil
 
@@ -15,8 +12,11 @@ local function client_menu_toggle_fn()
 end
 
 -- {{{ Wibar
+-- Keyboard map indicator and switcher
+mykeyboardlayout = awful.widget.keyboardlayout()
+
 -- Create a textclock widget
-mytextclock = wibox.widget.textclock()
+mytextclock = wibox.widget.textclock("%b %d %H:%M:%S", 1)
 
 -- Create a wibox for each screen and add it
 local taglist_buttons = awful.util.table.join(
@@ -36,57 +36,33 @@ local taglist_buttons = awful.util.table.join(
                     awful.button({ }, 5, function(t) awful.tag.viewprev(t.screen) end)
                 )
 
-local tasklist_buttons = awful.util.table.join(
-                     awful.button({ }, 1, function (c)
-                                              if c == client.focus then
-                                                  c.minimized = true
-                                              else
-                                                  -- Without this, the following
-                                                  -- :isvisible() makes no sense
-                                                  c.minimized = false
-                                                  if not c:isvisible() and c.first_tag then
-                                                      c.first_tag:view_only()
-                                                  end
-                                                  -- This will also un-minimize
-                                                  -- the client, if needed
-                                                  client.focus = c
-                                                  c:raise()
-                                              end
-                                          end),
-                     awful.button({ }, 3, client_menu_toggle_fn()),
-                     awful.button({ }, 4, function ()
-                                              awful.client.focus.byidx(1)
-                                          end),
-                     awful.button({ }, 5, function ()
-                                              awful.client.focus.byidx(-1)
-                                          end))
-
 for s in screen do
     -- Each screen has its own tag table.
-    awful.tag({ "web", "txt", "term", "4", "5", "6", "7", "med", "im" }, s, awful.layout.layouts[1])
+    awful.tag({"","","","4","5","6","7","",""}, s, awful.layout.layouts[1])
 
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
     -- Create an imagebox widget which will contains an icon indicating which layout we're using.
     -- We need one layoutbox per screen.
     s.mylayoutbox = awful.widget.layoutbox(s)
+    s.mylayoutbox.resize = false
     s.mylayoutbox:buttons(awful.util.table.join(
-                           awful.button({ }, 1, function () awful.layout.inc( 1) end),
-                           awful.button({ }, 3, function () awful.layout.inc(-1) end),
-                           awful.button({ }, 4, function () awful.layout.inc( 1) end),
-                           awful.button({ }, 5, function () awful.layout.inc(-1) end)))
+                          awful.button({ }, 1, function () awful.layout.inc( 1) end),
+                          awful.button({ }, 3, function () awful.layout.inc(-1) end),
+                          awful.button({ }, 4, function () awful.layout.inc( 1) end),
+                          awful.button({ }, 5, function () awful.layout.inc(-1) end)))
     -- Create a taglist widget
     s.mytaglist = awful.widget.taglist(s, awful.widget.taglist.filter.all, taglist_buttons)
 
     -- Create a tasklist widget
-    s.mytasklist = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, tasklist_buttons)
+    s.mytasklist = awful.widget.tasklist(s, awful.widget.tasklist.filter.focused, tasklist_buttons)
 
     -- Create the wibox
-    padding = 5
+    padding = beautiful.get().useless_gap
     s.mywibox = awful.wibar({
         position = "top",
         screen = s,
-        width = s.geometry["width"] - padding * 2,
+        width = s.geometry.width - padding * 2,
         x = padding
     })
 
@@ -94,8 +70,8 @@ for s in screen do
     s.mywibox:setup {
         layout = wibox.layout.align.horizontal,
         { -- Left widgets
+            wibox.container.margin(s.mylayoutbox, 3, 0, 3),
             layout = wibox.layout.fixed.horizontal,
-            mylauncher,
             s.mytaglist,
             s.mypromptbox,
         },
@@ -105,7 +81,6 @@ for s in screen do
             mykeyboardlayout,
             wibox.widget.systray(),
             mytextclock,
-            s.mylayoutbox,
         },
     }
 end
@@ -125,9 +100,6 @@ mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesom
                                     { "open terminal", terminal }
                                   }
                         })
-
-mylauncher = awful.widget.launcher({ image = beautiful.awesome_icon,
-                                     menu = mymainmenu })
 
 -- Menubar configuration
 menubar.utils.terminal = terminal -- Set the terminal for applications that require it
