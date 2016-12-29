@@ -61,27 +61,9 @@ local tasklist_buttons = awful.util.table.join(
                                               awful.client.focus.byidx(-1)
                                           end))
 
-local function set_wallpaper(s)
-    -- Wallpaper
-    if beautiful.wallpaper then
-        local wallpaper = beautiful.wallpaper
-        -- If wallpaper is a function, call it with the screen
-        if type(wallpaper) == "function" then
-            wallpaper = wallpaper(s)
-        end
-        gears.wallpaper.maximized(wallpaper, s, true)
-    end
-end
-
--- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
-screen.connect_signal("property::geometry", set_wallpaper)
-
-awful.screen.connect_for_each_screen(function(s)
-    -- Wallpaper
-    set_wallpaper(s)
-
+for s in screen do
     -- Each screen has its own tag table.
-    awful.tag({ "1", "2", "3", "4", "5", "6", "7", "8", "9" }, s, awful.layout.layouts[1])
+    awful.tag({ "web", "txt", "term", "4", "5", "6", "7", "med", "im" }, s, awful.layout.layouts[1])
 
     -- Create a promptbox for each screen
     s.mypromptbox = awful.widget.prompt()
@@ -100,7 +82,13 @@ awful.screen.connect_for_each_screen(function(s)
     s.mytasklist = awful.widget.tasklist(s, awful.widget.tasklist.filter.currenttags, tasklist_buttons)
 
     -- Create the wibox
-    s.mywibox = awful.wibar({ position = "top", screen = s })
+    padding = 5
+    s.mywibox = awful.wibar({
+        position = "top",
+        screen = s,
+        width = s.geometry["width"] - padding * 2,
+        x = padding
+    })
 
     -- Add widgets to the wibox
     s.mywibox:setup {
@@ -120,7 +108,7 @@ awful.screen.connect_for_each_screen(function(s)
             s.mylayoutbox,
         },
     }
-end)
+end
 -- }}}
 
 -- {{{ Menu

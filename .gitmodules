@@ -1,0 +1,3 @@
+[submodule "themes/tomorrow"]
+	path = themes/tomorrow
+	url = git@github.com:pltanton/awesome-tomorrow-theme.git
